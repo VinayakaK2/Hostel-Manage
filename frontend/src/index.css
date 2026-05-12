@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-offset-white;
+    --tw-ring-color: theme("colors.brand.500");
+  }
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}

@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  WARDEN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum HostelType {
+  BOYS
+  GIRLS
+}
+
+enum HostelStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RoomStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum StudentGender {
+  MALE
+  FEMALE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+}
+
+enum ActivityActorType {
+  ADMIN
+  SYSTEM
+}
+
+enum NotificationCategory {
+  LEAVE_ALERT
+  ABSENT_ALERT
+  HOSTEL_FULL
+  NOTIFICATION_FAILURE
+  SYSTEM_WARNING
+}
+
+enum ObservationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum WardenNotificationCategory {
+  ATTENDANCE_ALERT
+  LEAVE_ALERT
+  ABSENCE_PARENT
+  NOTIFICATION_FAILURE
+  SYSTEM
+}
+
+enum AbsentParentJobState {
+  QUEUED
+  CANCELLED
+  COMPLETED
+  FAILED
+}
+
+enum CommunicationChannel {
+  SMS
+  EMAIL
+}
+
+enum CommunicationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Admin {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  password_hash  String         @map("password_hash")
+  role           Role           @default(ADMIN)
+  status         AccountStatus  @default(ACTIVE)
+  preferences    Json?          @default("{}")
+  created_at     DateTime       @default(now()) @map("created_at")
+  updated_at     DateTime       @updatedAt @map("updated_at")
+
+  activities     AdminActivity[]
+
+  @@map("admins")
+}
+
+model Hostel {
+  id           String       @id @default(cuid())
+  name         String
+  type         HostelType
+  capacity     Int
+  floor_count  Int          @default(1) @map("floor_count")
+  status       HostelStatus @default(ACTIVE)
+  created_at   DateTime     @default(now()) @map("created_at")
+  updated_at   DateTime     @updatedAt @map("updated_at")
+
+  rooms    Room[]
+  students Student[]
+  wardens  Warden[]
+
+  warden_activities             WardenActivity[]
+  study_observations            StudyObservation[]
+  warden_notifications        WardenNotification[]
+  absent_parent_notification_jobs AbsentParentNotificationJob[]
+  parent_communication_logs     ParentCommunicationLog[]
+
+  @@map("hostels")
+}
+
+model Room {
+  id                 String     @id @default(cuid())
+  hostel_id          String     @map("hostel_id")
+  hostel             Hostel     @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  room_number        String     @map("room_number")
+  capacity           Int
+  current_occupancy  Int        @default(0) @map("current_occupancy")
+  floor              Int        @default(1)
+  status             RoomStatus @default(ACTIVE)
+  /// Grid column index (0-based) for blueprint canvas
+  x_position         Int        @default(0) @map("x_position")
+  /// Grid row index (0-based) for blueprint canvas
+  y_position         Int        @default(0) @map("y_position")
+  /// Horizontal span in blueprint grid cells
+  layout_width       Int        @default(1) @map("layout_width")
+  /// Vertical span in blueprint grid cells
+  layout_height      Int        @default(1) @map("layout_height")
+  created_at         DateTime   @default(now()) @map("created_at")
+  updated_at         DateTime   @updatedAt @map("updated_at")
+
+  students Student[]
+
+  @@unique([hostel_id, room_number])
+  @@index([hostel_id])
+  @@index([hostel_id, floor])
+  @@map("rooms")
+}
+
+model Warden {
+  id                   String         @id @default(cuid())
+  name                 String
+  email                String         @unique
+  password_hash        String         @map("password_hash")
+  phone                String?
+  role                 Role           @default(WARDEN)
+  status               AccountStatus  @default(ACTIVE)
+  assigned_hostel_id   String?        @map("assigned_hostel_id")
+  assigned_hostel      Hostel?        @relation(fields: [assigned_hostel_id], references: [id], onDelete: SetNull)
+  created_at           DateTime       @default(now()) @map("created_at")
+  updated_at           DateTime       @updatedAt @map("updated_at")
+
+  attendance_marked Attendance[] @relation("AttendanceMarkedBy")
+  study_observations StudyObservation[]
+  warden_activities  WardenActivity[] @relation("WardenActivityActor")
+
+  @@index([assigned_hostel_id])
+  @@map("wardens")
+}
+
+model Student {
+  id              String         @id @default(cuid())
+  student_id      String         @unique @map("student_id")
+  name            String
+  gender          StudentGender
+  course          String
+  phone           String?
+  parent_contact  String         @map("parent_contact")
+  hostel_id       String         @map("hostel_id")
+  hostel          Hostel         @relation(fields: [hostel_id], references: [id], onDelete: Restrict)
+  room_id         String?        @map("room_id")
+  room            Room?          @relation(fields: [room_id], references: [id], onDelete: SetNull)
+  status          StudentStatus  @default(ACTIVE)
+  created_at      DateTime       @default(now()) @map("created_at")
+  updated_at      DateTime       @updatedAt @map("updated_at")
+
+  attendance Attendance[]
+  study_observations StudyObservation[]
+  absent_parent_jobs AbsentParentNotificationJob[]
+
+  @@index([hostel_id])
+  @@index([room_id])
+  @@index([gender])
+  @@index([status])
+  @@map("students")
+}
+
+model Attendance {
+  id                String            @id @default(cuid())
+  student_id        String            @map("student_id")
+  student           Student           @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  attendance_date DateTime          @map("attendance_date") @db.Date
+  status            AttendanceStatus
+  leave_reason      String?           @map("leave_reason")
+  remark            String?
+  marked_by_id      String?           @map("marked_by_id")
+  marked_by         Warden?           @relation("AttendanceMarkedBy", fields: [marked_by_id], references: [id], onDelete: SetNull)
+  created_at        DateTime          @default(now()) @map("created_at")
+
+  absent_parent_job AbsentParentNotificationJob?
+
+  @@unique([student_id, attendance_date])
+  @@index([attendance_date])
+  @@map("attendance")
+}
+
+model StudyObservation {
+  id             String              @id @default(cuid())
+  hostel_id      String              @map("hostel_id")
+  hostel         Hostel              @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  student_id     String              @map("student_id")
+  student        Student             @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  note           String              @db.Text
+  severity       ObservationSeverity
+  created_by_id  String              @map("created_by_id")
+  created_by     Warden              @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+  created_at     DateTime            @default(now()) @map("created_at")
+  updated_at     DateTime            @updatedAt @map("updated_at")
+
+  @@index([hostel_id, created_at])
+  @@index([student_id, created_at])
+  @@map("study_observations")
+}
+
+model WardenActivity {
+  id         String   @id @default(cuid())
+  hostel_id  String   @map("hostel_id")
+  hostel     Hostel   @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  metadata   Json?
+  actor_id   String?  @map("actor_id")
+  actor      Warden?  @relation("WardenActivityActor", fields: [actor_id], references: [id], onDelete: SetNull)
+  created_at DateTime @default(now()) @map("created_at")
+
+  @@index([hostel_id, created_at])
+  @@map("warden_activities")
+}
+
+model WardenNotification {
+  id         String                   @id @default(cuid())
+  hostel_id  String                   @map("hostel_id")
+  hostel     Hostel                   @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  category   WardenNotificationCategory
+  title      String
+  message    String
+  read       Boolean                  @default(false)
+  metadata   Json?
+  created_at DateTime                 @default(now()) @map("created_at")
+
+  @@index([hostel_id, read])
+  @@index([hostel_id, created_at])
+  @@map("warden_notifications")
+}
+
+model AbsentParentNotificationJob {
+  id               String               @id @default(cuid())
+  hostel_id        String               @map("hostel_id")
+  hostel           Hostel               @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  student_id       String               @map("student_id")
+  student          Student              @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  attendance_id    String               @unique @map("attendance_id")
+  attendance       Attendance           @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
+  attendance_date  DateTime             @map("attendance_date") @db.Date
+  state              AbsentParentJobState @default(QUEUED)
+  process_after      DateTime             @map("process_after")
+  attempt_count      Int                  @default(0) @map("attempt_count")
+  last_error         String?              @map("last_error")
+  created_at         DateTime             @default(now()) @map("created_at")
+  updated_at         DateTime             @updatedAt @map("updated_at")
+
+  @@index([hostel_id, state, process_after])
+  @@map("absent_parent_notification_jobs")
+}
+
+model ParentCommunicationLog {
+  id         String                     @id @default(cuid())
+  hostel_id  String                     @map("hostel_id")
+  hostel     Hostel                     @relation(fields: [hostel_id], references: [id], onDelete: Cascade)
+  student_id String                     @map("student_id")
+  channel    CommunicationChannel
+  recipient  String
+  message    String                     @db.Text
+  status     CommunicationDeliveryStatus
+  error      String?
+  created_at DateTime                   @default(now()) @map("created_at")
+
+  @@index([hostel_id, created_at])
+  @@index([student_id, created_at])
+  @@map("parent_communication_logs")
+}
+
+model AdminActivity {
+  id          String            @id @default(cuid())
+  type        String
+  title       String
+  metadata    Json?
+  actor_type  ActivityActorType @default(SYSTEM) @map("actor_type")
+  actor_id    String?           @map("actor_id")
+  admin       Admin?            @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+  created_at  DateTime          @default(now()) @map("created_at")
+
+  @@index([created_at])
+  @@map("admin_activities")
+}
+
+model AdminNotification {
+  id         String               @id @default(cuid())
+  category   NotificationCategory
+  title      String
+  message    String
+  read       Boolean              @default(false)
+  created_at DateTime             @default(now()) @map("created_at")
+
+  @@index([read])
+  @@index([created_at])
+  @@map("admin_notifications")
+}
