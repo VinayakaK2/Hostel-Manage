@@ -57,7 +57,7 @@ export function WardenProfilePage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="erp-page">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Profile</h2>
         <p className="text-sm text-slate-600">Manage your account and review hostel assignment.</p>

@@ -20,9 +20,7 @@ export function WardenLayout() {
         />
       ) : null}
 
-      <div
-        className={`mx-auto flex min-h-dvh w-full ${isBlueprint ? "max-w-none" : "max-w-[1600px]"}`}
-      >
+      <div className="flex min-h-dvh w-full min-w-0">
         <div
           className={`fixed inset-y-0 left-0 z-50 md:static md:z-0 ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
@@ -36,8 +34,8 @@ export function WardenLayout() {
           <main
             className={
               isBlueprint
-                ? "flex min-h-0 flex-1 flex-col p-0"
-                : "flex min-h-0 flex-1 flex-col px-4 py-6 sm:px-6"
+                ? "flex min-h-0 w-full min-w-0 flex-1 flex-col p-0"
+                : "flex min-h-0 w-full min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8"
             }
           >
             <Outlet />

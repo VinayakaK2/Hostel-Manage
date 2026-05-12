@@ -34,7 +34,7 @@ export function AdminSettingsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Control</p>
         <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Settings</h2>
@@ -43,7 +43,7 @@ export function AdminSettingsPage() {
 
       <AsyncState loading={loading} error={error} empty={false}>
         <form
-          className="max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
+          className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
           onSubmit={async (e) => {
             e.preventDefault();
             await patchAdminSettings(prefs);

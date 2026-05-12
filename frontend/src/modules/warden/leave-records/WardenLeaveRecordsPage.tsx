@@ -62,13 +62,13 @@ export function WardenLeaveRecordsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="erp-page-tight">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Leave records</h2>
         <p className="text-sm text-slate-600">Attendance-linked leave marks for your hostel.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="erp-metric-grid">
         <label className="text-sm font-medium text-slate-700">
           From
           <input

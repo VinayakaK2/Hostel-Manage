@@ -537,7 +537,7 @@ export function AdminStudentsPage() {
   const [cohort, setCohort] = useState<null | "MALE" | "FEMALE">(null);
 
   return (
-    <div className="space-y-8">
+    <div className="erp-page-wide">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Directory</p>
         <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
@@ -549,7 +549,7 @@ export function AdminStudentsPage() {
       </div>
 
       {cohort === null ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="erp-panel-grid">
           <button
             type="button"
             onClick={() => setCohort("MALE")}

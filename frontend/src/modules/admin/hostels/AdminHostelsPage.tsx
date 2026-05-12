@@ -83,7 +83,7 @@ export function AdminHostelsPage() {
   }, [edit, editForm]);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Inventory</p>

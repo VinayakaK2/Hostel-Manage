@@ -31,7 +31,7 @@ export function AdminNotificationsPage() {
   }, [page]);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Center</p>
         <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Notifications</h2>

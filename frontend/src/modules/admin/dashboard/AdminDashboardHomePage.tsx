@@ -94,8 +94,8 @@ export function AdminDashboardHomePage() {
   }, [charts]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="erp-page">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">
             Overview
@@ -108,7 +108,7 @@ export function AdminDashboardHomePage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <label className="text-xs font-semibold text-slate-600">
             Charts from
             <input
@@ -140,7 +140,7 @@ export function AdminDashboardHomePage() {
         }}
       >
         {stats ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="erp-metric-grid">
             <StatMetricCard
               title="Total Students"
               value={String(stats.totalStudents)}
@@ -197,7 +197,7 @@ export function AdminDashboardHomePage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="erp-panel-grid">
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -205,7 +205,7 @@ export function AdminDashboardHomePage() {
                 <p className="text-xs text-slate-600">Present-rate by day</p>
               </div>
             </div>
-            <div className="mt-4 h-[280px] w-full">
+            <div className="erp-chart-viewport">
               {charts && charts.attendanceTrend.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-600">
                   No attendance data in this range.
@@ -243,7 +243,7 @@ export function AdminDashboardHomePage() {
                 <p className="text-xs text-slate-600">Occupancy % by hostel</p>
               </div>
             </div>
-            <div className="mt-4 h-[280px] w-full">
+            <div className="erp-chart-viewport">
               {charts && charts.occupancy.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-600">
                   No hostels available.
@@ -269,7 +269,7 @@ export function AdminDashboardHomePage() {
                 <p className="text-xs text-slate-600">Leave marks by day</p>
               </div>
             </div>
-            <div className="mt-4 h-[280px] w-full">
+            <div className="erp-chart-viewport">
               {charts && charts.leaveStatistics.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-600">
                   No leave marks in this range.
@@ -301,7 +301,7 @@ export function AdminDashboardHomePage() {
                 <p className="text-xs text-slate-600">Active + on leave students</p>
               </div>
             </div>
-            <div className="mt-4 h-[280px] w-full">
+            <div className="erp-chart-viewport">
               {genderPie.every((x) => x.value === 0) ? (
                 <div className="flex h-full items-center justify-center text-sm text-slate-600">
                   No student records.
@@ -323,8 +323,8 @@ export function AdminDashboardHomePage() {
           </section>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5 lg:col-span-2">
+        <div className="erp-main-aside">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-slate-900">Recent activity</p>

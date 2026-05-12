@@ -18,7 +18,7 @@ export function AdminLayout() {
         />
       ) : null}
 
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1600px]">
+      <div className="flex min-h-dvh w-full min-w-0">
         <div
           className={`fixed inset-y-0 left-0 z-50 md:static md:z-0 ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
@@ -27,9 +27,9 @@ export function AdminLayout() {
           <AdminSidebar />
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <AdminTopbar />
-          <main className="flex-1 px-4 py-6 sm:px-6">
+          <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </main>
         </div>

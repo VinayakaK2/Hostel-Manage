@@ -27,7 +27,7 @@ export function StatMetricCard({
         : "text-slate-600";
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-card backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-soft">
+    <div className="group relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-card backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-soft">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-50/70 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0">

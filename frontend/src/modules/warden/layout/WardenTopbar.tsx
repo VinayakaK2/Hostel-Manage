@@ -41,7 +41,7 @@ export function WardenTopbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/85 backdrop-blur">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <button
           type="button"
           className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm hover:bg-slate-50 md:hidden"
@@ -60,7 +60,7 @@ export function WardenTopbar() {
           <IconChevron className={`h-5 w-5 transition ${collapsed ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="min-w-0 flex-1 basis-[200px]">
+        <div className="min-w-0 flex-1 basis-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">{hostelLine}</p>
           <h1 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
             {title}
@@ -68,7 +68,7 @@ export function WardenTopbar() {
         </div>
 
         {!isBlueprint ? (
-          <div className="order-last flex w-full flex-1 basis-full items-center md:order-none md:w-[min(380px,32vw)] md:basis-auto">
+          <div className="order-last flex w-full min-w-0 flex-1 basis-full items-center md:order-none md:basis-0">
             <label className="relative w-full">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 <IconSearch className="h-4 w-4" />

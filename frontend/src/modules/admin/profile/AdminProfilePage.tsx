@@ -79,7 +79,7 @@ export function AdminProfilePage() {
   }, [tab]);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Account</p>
         <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Profile</h2>
@@ -104,7 +104,7 @@ export function AdminProfilePage() {
       <AsyncState loading={loading} error={error} empty={!profile}>
         {tab === "profile" && profile ? (
           <form
-            className="max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
+            className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
             onSubmit={pf.handleSubmit(async (v) => {
               const updated = (await patchAdminProfile(v)) as ProfileDto;
               setProfile(updated);
@@ -118,7 +118,7 @@ export function AdminProfilePage() {
 
         {tab === "password" ? (
           <form
-            className="max-w-xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
+            className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
             onSubmit={pw.handleSubmit(async (v) => {
               await patchAdminPassword(v);
               pw.reset();

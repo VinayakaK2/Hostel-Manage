@@ -79,7 +79,7 @@ export function AdminWardensPage() {
   const bump = () => setReload((x) => x + 1);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">People</p>

@@ -110,7 +110,7 @@ export function WardenObservationsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="erp-page-tight">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Study observations</h2>

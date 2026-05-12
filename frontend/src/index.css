@@ -10,7 +10,60 @@
     @apply outline-none ring-2 ring-offset-2 ring-offset-white;
     --tw-ring-color: theme("colors.brand.500");
   }
+  html {
+    height: 100%;
+  }
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply min-h-dvh bg-slate-50 text-slate-900;
+  }
+  #root {
+    @apply flex min-h-dvh w-full flex-col;
+  }
+}
+
+/**
+ * ERP shell: fluid grids + full-width pages (browser zoom / resize safe).
+ * Prefer these over fixed column counts (e.g. xl:grid-cols-4).
+ */
+@layer components {
+  .erp-page {
+    @apply w-full min-w-0 space-y-6;
+  }
+  .erp-page-tight {
+    @apply w-full min-w-0 space-y-4;
+  }
+  .erp-page-wide {
+    @apply w-full min-w-0 space-y-8;
+  }
+  .erp-metric-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  }
+  .erp-panel-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  }
+  .erp-tile-grid-3 {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  }
+  .erp-main-aside {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 1024px) {
+    .erp-main-aside {
+      grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+    }
+  }
+  .erp-chart-viewport {
+    margin-top: 1rem;
+    width: 100%;
+    min-height: 200px;
+    height: clamp(200px, 32vh, 400px);
   }
 }

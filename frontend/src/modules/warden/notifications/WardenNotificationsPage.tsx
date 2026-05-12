@@ -50,7 +50,7 @@ export function WardenNotificationsPage() {
   }, [load]);
 
   return (
-    <div className="space-y-4">
+    <div className="erp-page-tight">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Notification center</h2>
         <p className="text-sm text-slate-600">Operational alerts, parent channel outcomes, and delivery retries.</p>

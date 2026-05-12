@@ -122,8 +122,8 @@ export function WardenDashboardHomePage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="erp-page">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Operational overview</h2>
           <p className="mt-1 text-sm text-slate-600">
@@ -149,7 +149,7 @@ export function WardenDashboardHomePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="erp-metric-grid">
         <StatMetricCard
           title="Total hostel students"
           value={stats ? String(stats.total_students) : "—"}
@@ -228,7 +228,7 @@ export function WardenDashboardHomePage() {
         emptyTitle="No dashboard data"
         emptyDescription="Try refreshing. If the issue persists, contact the administrator."
       >
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="erp-panel-grid">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -236,7 +236,7 @@ export function WardenDashboardHomePage() {
                 <p className="text-xs text-slate-600">Daily counts for selected range</p>
               </div>
             </div>
-            <div className="mt-4 h-64">
+            <div className="erp-chart-viewport">
               {attendanceTrend.length === 0 ? (
                 <p className="text-sm text-slate-600">No attendance data in this range.</p>
               ) : (
@@ -272,7 +272,7 @@ export function WardenDashboardHomePage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <p className="text-sm font-semibold text-slate-900">Leave trend</p>
             <p className="text-xs text-slate-600">Leave marks per day</p>
-            <div className="mt-4 h-64">
+            <div className="erp-chart-viewport">
               {leaveTrend.length === 0 ? (
                 <p className="text-sm text-slate-600">No leave marks in this range.</p>
               ) : (
@@ -292,7 +292,7 @@ export function WardenDashboardHomePage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <p className="text-sm font-semibold text-slate-900">Daily attendance summary</p>
             <p className="text-xs text-slate-600">Today&apos;s hostel-wide snapshot</p>
-            <div className="mt-4 h-64">
+            <div className="erp-chart-viewport">
               {dailySummary.length === 0 ? (
                 <p className="text-sm text-slate-600">No attendance captured for today yet.</p>
               ) : (
@@ -312,7 +312,7 @@ export function WardenDashboardHomePage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
             <p className="text-sm font-semibold text-slate-900">Student status distribution</p>
             <p className="text-xs text-slate-600">Operational mix</p>
-            <div className="mt-4 h-64">
+            <div className="erp-chart-viewport">
               {pieData.length === 0 ? (
                 <p className="text-sm text-slate-600">No students found.</p>
               ) : (
@@ -333,8 +333,8 @@ export function WardenDashboardHomePage() {
         </div>
       </AsyncState>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card lg:col-span-2">
+      <div className="erp-main-aside">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-900">Recent activity</h3>
             <span className="text-xs font-medium text-slate-500">Hostel-scoped audit trail</span>

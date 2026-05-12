@@ -28,7 +28,7 @@ export function AdminReportsPage() {
   }, [reportsFrom, reportsTo, hostelId]);
 
   return (
-    <div className="space-y-6">
+    <div className="erp-page">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Reports</p>
         <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Reports & analytics</h2>
@@ -37,7 +37,7 @@ export function AdminReportsPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+      <div className="flex min-w-0 flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
         <label className="text-xs font-semibold text-slate-600">
           From
           <input
@@ -56,10 +56,10 @@ export function AdminReportsPage() {
             onChange={(e) => setReportsRange(reportsFrom, e.target.value)}
           />
         </label>
-        <label className="text-xs font-semibold text-slate-600">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-semibold text-slate-600 sm:min-w-[220px] sm:max-w-xl">
           Hostel ID (optional)
           <input
-            className="ml-2 w-64 rounded-lg border border-slate-200 px-2 py-1 font-mono text-xs"
+            className="w-full min-w-0 rounded-lg border border-slate-200 px-2 py-1 font-mono text-xs"
             value={hostelId}
             onChange={(e) => setHostelId(e.target.value)}
           />
@@ -71,7 +71,7 @@ export function AdminReportsPage() {
 
       <AsyncState loading={loading} error={error} empty={false} onRetry={() => setReportsRange(reportsFrom, reportsTo)}>
         <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-slate-50 shadow-card">
-          <pre className="max-h-[560px] overflow-auto text-xs leading-relaxed">
+          <pre className="max-h-[min(560px,70dvh)] overflow-auto text-xs leading-relaxed">
             {JSON.stringify(data, null, 2)}
           </pre>
         </div>
