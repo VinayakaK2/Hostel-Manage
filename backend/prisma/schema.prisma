@@ -188,6 +188,7 @@ model Student {
   student_id      String         @unique @map("student_id")
   name            String
   gender          StudentGender
+  class_year      Int            @default(11) @map("class_year")
   course          String
   phone           String?
   parent_contact  String         @map("parent_contact")
@@ -206,6 +207,7 @@ model Student {
   @@index([hostel_id])
   @@index([room_id])
   @@index([gender])
+  @@index([class_year])
   @@index([status])
   @@map("students")
 }

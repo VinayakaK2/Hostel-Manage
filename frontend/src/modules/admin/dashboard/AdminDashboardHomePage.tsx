@@ -25,12 +25,7 @@ import { z } from "zod";
 import { activityItemSchema, dashboardStatsSchema } from "@/modules/admin/api/schemas";
 import { AppModal } from "@/modules/admin/components/AppModal";
 import { AsyncState } from "@/modules/admin/components/AsyncState";
-import {
-  IconBuilding,
-  IconChart,
-  IconShield,
-  IconUsers,
-} from "@/modules/admin/components/icons";
+import { IconChart, IconShield, IconUsers } from "@/modules/admin/components/icons";
 import { StatMetricCard } from "@/modules/admin/components/StatMetricCard";
 import { useAdminDashboardFiltersStore } from "@/stores/adminDashboardFiltersStore";
 import { Button } from "@/components/ui/Button";
@@ -162,24 +157,16 @@ export function AdminDashboardHomePage() {
               icon={<IconUsers className="h-6 w-6" />}
             />
             <StatMetricCard
-              title="Total Hostels"
-              value={String(stats.totalHostels)}
-              subtitle="Active inventory"
-              icon={<IconBuilding className="h-6 w-6" />}
-            />
-            <StatMetricCard
               title="Active Wardens"
               value={String(stats.activeWardens)}
               subtitle="Operational staff"
               icon={<IconShield className="h-6 w-6" />}
             />
             <StatMetricCard
-              title="Today Attendance"
-              value={`${stats.todayAttendancePct}%`}
-              subtitle="Across marked rolls"
+              title="Today attendance"
+              value={`${stats.todayPresentCount} Present`}
+              subtitle={`${stats.todayAttendancePct}% attendance today`}
               icon={<IconChart className="h-6 w-6" />}
-              trendLabel="Daily roll-up"
-              trendVariant="up"
             />
             <StatMetricCard
               title="Students On Leave"

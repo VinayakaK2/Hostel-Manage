@@ -58,11 +58,55 @@ export const wardenChartsSchema = z.object({
   student_status_distribution: z.array(statusDistributionRowSchema),
 });
 
+export const wardenOperationsSchema = z.object({
+  recent_attendance: z.array(
+    z.object({
+      at: z.string(),
+      status: z.enum(["PRESENT", "ABSENT", "LEAVE"]),
+      student_name: z.string(),
+      student_code: z.string(),
+      class_year: z.coerce.number().int(),
+    }),
+  ),
+  recent_students: z.array(
+    z.object({
+      name: z.string(),
+      student_id: z.string(),
+      class_year: z.coerce.number().int(),
+      created_at: z.string(),
+    }),
+  ),
+  leave_today: z.array(
+    z.object({
+      name: z.string(),
+      student_id: z.string(),
+      class_year: z.coerce.number().int(),
+    }),
+  ),
+  notification_activity: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      category: z.string(),
+      read: z.boolean(),
+      created_at: z.string(),
+    }),
+  ),
+  occupancy_snapshot: z.object({
+    room_count: z.coerce.number().int(),
+    total_bed_capacity: z.coerce.number().int(),
+    occupied_beds: z.coerce.number().int(),
+    empty_rooms: z.coerce.number().int(),
+    full_rooms: z.coerce.number().int(),
+  }),
+});
+
 export const wardenStudentRowSchema = z.object({
   id: z.string(),
   student_id: z.string(),
   name: z.string(),
   gender: z.enum(["MALE", "FEMALE"]),
+  class_year: z.coerce.number().int(),
   course: z.string(),
   phone: z.string().nullable().optional(),
   parent_contact: z.string(),
@@ -80,6 +124,7 @@ export const wardenStudentDetailSchema = z.object({
   student_id: z.string(),
   name: z.string(),
   gender: z.enum(["MALE", "FEMALE"]),
+  class_year: z.coerce.number().int(),
   course: z.string(),
   phone: z.string().nullable().optional(),
   parent_contact: z.string(),
@@ -327,6 +372,10 @@ export function parseActivity(data: unknown) {
 
 export function parseCharts(data: unknown) {
   return parseData(wardenChartsSchema, data, "charts");
+}
+
+export function parseWardenOperations(data: unknown) {
+  return parseData(wardenOperationsSchema, data, "operations");
 }
 
 export function parseStudentListPayload(data: unknown) {

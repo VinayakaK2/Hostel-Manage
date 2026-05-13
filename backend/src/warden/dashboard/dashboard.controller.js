@@ -25,3 +25,9 @@ export const charts = asyncHandler(async (req, res) => {
   const data = await service.getCharts(hostelId, { from: parsed.data.from, to: parsed.data.to });
   res.json({ success: true, message: "OK", data });
 });
+
+export const operations = asyncHandler(async (req, res) => {
+  const { hostelId } = req.warden;
+  const data = await service.getOperationalSnapshot(hostelId);
+  res.json({ success: true, message: "OK", data });
+});

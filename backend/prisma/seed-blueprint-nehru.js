@@ -96,15 +96,18 @@ export async function seedNehruBoysBlueprint(prisma, boysHostel, warden) {
 
   const today = utcDateOnly(new Date());
 
-  for (const s of NEHRU_STUDENTS) {
+  for (let i = 0; i < NEHRU_STUDENTS.length; i += 1) {
+    const s = NEHRU_STUDENTS[i];
     const roomId = roomIdByNum.get(s.roomNum);
     if (!roomId) throw new Error(`Missing room ${s.roomNum}`);
+    const classYear = i < 9 ? 11 : 12;
     const student = await prisma.student.upsert({
       where: { student_id: s.student_id },
       create: {
         student_id: s.student_id,
         name: s.name,
         gender: "MALE",
+        class_year: classYear,
         course: s.course,
         phone: s.phone,
         parent_contact: s.parent_contact,
@@ -121,6 +124,7 @@ export async function seedNehruBoysBlueprint(prisma, boysHostel, warden) {
         room_id: roomId,
         status: "ACTIVE",
         gender: "MALE",
+        class_year: classYear,
       },
     });
 

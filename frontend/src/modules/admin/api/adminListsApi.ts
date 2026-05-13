@@ -28,7 +28,8 @@ export async function listStudents(
     page?: number;
     limit?: number;
     search?: string;
-    gender?: "MALE" | "FEMALE";
+    gender?: "MALE" | "FEMALE" | "BOYS" | "GIRLS";
+    class?: number;
     status?: "ACTIVE" | "INACTIVE" | "ON_LEAVE";
     hostelId?: string;
     sort?: string;
@@ -40,6 +41,7 @@ export async function listStudents(
   if (params.limit) qs.set("limit", String(params.limit));
   if (params.search) qs.set("search", params.search);
   if (params.gender) qs.set("gender", params.gender);
+  if (params.class !== undefined) qs.set("class", String(params.class));
   if (params.status) qs.set("status", params.status);
   if (params.hostelId) qs.set("hostelId", params.hostelId);
   if (params.sort) qs.set("sort", params.sort);

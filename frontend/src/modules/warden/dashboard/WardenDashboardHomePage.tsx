@@ -1,100 +1,56 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { WardenClientError } from "@/lib/api/wardenClient";
 import {
   fetchWardenDashboardActivity,
-  fetchWardenDashboardCharts,
+  fetchWardenDashboardOperations,
   fetchWardenDashboardStats,
 } from "@/modules/warden/api/wardenApi";
 import { z } from "zod";
-import { wardenActivityItemSchema, wardenDashboardStatsSchema } from "@/modules/warden/api/schemas";
+import { wardenActivityItemSchema, wardenDashboardStatsSchema, wardenOperationsSchema } from "@/modules/warden/api/schemas";
 import { AsyncState } from "@/modules/admin/components/AsyncState";
-import {
-  IconBuilding,
-  IconChart,
-  IconShield,
-  IconUsers,
-} from "@/modules/admin/components/icons";
+import { IconBuilding, IconShield, IconUsers } from "@/modules/admin/components/icons";
 import { StatMetricCard } from "@/modules/admin/components/StatMetricCard";
-import { useWardenDashboardFiltersStore } from "@/stores/wardenDashboardFiltersStore";
 import { Button } from "@/components/ui/Button";
 
 type Stats = z.infer<typeof wardenDashboardStatsSchema>;
 type ActivityItem = z.infer<typeof wardenActivityItemSchema>;
-
-const PIE_COLORS = ["#2563eb", "#60a5fa", "#93c5fd", "#1e3a8a"];
+type Operations = z.infer<typeof wardenOperationsSchema>;
 
 export function WardenDashboardHomePage() {
   const navigate = useNavigate();
-  const chartFrom = useWardenDashboardFiltersStore((s) => s.chartFrom);
-  const chartTo = useWardenDashboardFiltersStore((s) => s.chartTo);
-  const setChartRange = useWardenDashboardFiltersStore((s) => s.setChartRange);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [charts, setCharts] = useState<Awaited<ReturnType<typeof fetchWardenDashboardCharts>> | null>(
-    null,
-  );
+  const [operations, setOperations] = useState<Operations | null>(null);
 
-  const load = useCallback(
-    async (signal: AbortSignal) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [s, a, c] = await Promise.all([
-          fetchWardenDashboardStats(signal),
-          fetchWardenDashboardActivity(signal),
-          fetchWardenDashboardCharts({ from: chartFrom, to: chartTo }, signal),
-        ]);
-        setStats(s);
-        setActivity(a);
-        setCharts(c);
-      } catch (e) {
-        if (e instanceof WardenClientError && e.failure === "ABORTED") return;
-        setError(e instanceof WardenClientError ? e.message : "Unable to load dashboard.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [chartFrom, chartTo],
-  );
+  const load = useCallback(async (signal: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [s, a, o] = await Promise.all([
+        fetchWardenDashboardStats(signal),
+        fetchWardenDashboardActivity(signal),
+        fetchWardenDashboardOperations(signal),
+      ]);
+      setStats(s);
+      setActivity(a);
+      setOperations(o);
+    } catch (e) {
+      if (e instanceof WardenClientError && e.failure === "ABORTED") return;
+      setError(e instanceof WardenClientError ? e.message : "Unable to load dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const ac = new AbortController();
     void load(ac.signal);
     return () => ac.abort();
   }, [load]);
-
-  const attendanceTrend = charts?.attendance_trend ?? [];
-  const leaveTrend = charts?.leave_trend ?? [];
-  const dailySummary = charts?.daily_attendance_summary ?? [];
-  const statusDistribution = charts?.student_status_distribution ?? [];
-
-  const pieData = useMemo(
-    () =>
-      statusDistribution.map((row) => ({
-        name: row.status.replaceAll("_", " "),
-        value: row.count,
-      })),
-    [statusDistribution],
-  );
 
   const activityNarrative = useCallback((row: ActivityItem) => {
     switch (row.type) {
@@ -121,32 +77,20 @@ export function WardenDashboardHomePage() {
     }
   }, []);
 
+  const occ = operations?.occupancy_snapshot;
+
   return (
     <div className="erp-page">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Operational overview</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Live metrics scoped to your assigned hostel. Charts respect the selected range.
+            Live metrics and today&apos;s workflow signals for your assigned hostel.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              const to = new Date();
-              const from = new Date();
-              from.setDate(from.getDate() - 13);
-              setChartRange(from.toISOString().slice(0, 10), to.toISOString().slice(0, 10));
-            }}
-          >
-            Last 14 days
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => void load(new AbortController().signal)}>
-            Refresh
-          </Button>
-        </div>
+        <Button type="button" variant="secondary" onClick={() => void load(new AbortController().signal)}>
+          Refresh
+        </Button>
       </div>
 
       <div className="erp-metric-grid">
@@ -169,7 +113,7 @@ export function WardenDashboardHomePage() {
         <StatMetricCard
           title="Absent today"
           value={stats ? String(stats.absent_today) : "—"}
-          icon={<IconChart className="h-6 w-6" />}
+          icon={<IconUsers className="h-6 w-6" />}
           loading={loading}
           trendLabel="Queued parent flow"
           trendVariant="neutral"
@@ -194,7 +138,7 @@ export function WardenDashboardHomePage() {
         <StatMetricCard
           title="Pending notifications"
           value={stats ? String(stats.pending_notifications) : "—"}
-          icon={<IconChart className="h-6 w-6" />}
+          icon={<IconShield className="h-6 w-6" />}
           loading={loading}
           trendLabel="Unread in your inbox"
           trendVariant="neutral"
@@ -228,109 +172,129 @@ export function WardenDashboardHomePage() {
         emptyTitle="No dashboard data"
         emptyDescription="Try refreshing. If the issue persists, contact the administrator."
       >
-        <div className="erp-panel-grid">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Attendance trend</p>
-                <p className="text-xs text-slate-600">Daily counts for selected range</p>
-              </div>
-            </div>
-            <div className="erp-chart-viewport">
-              {attendanceTrend.length === 0 ? (
-                <p className="text-sm text-slate-600">No attendance data in this range.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={attendanceTrend}>
-                    <defs>
-                      <linearGradient id="wardenColorPresent" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="present"
-                      stackId="1"
-                      stroke="#1d4ed8"
-                      fill="url(#wardenColorPresent)"
-                      name="Present"
-                    />
-                    <Area type="monotone" dataKey="absent" stackId="2" stroke="#f97316" fill="#fdba74" name="Absent" />
-                    <Area type="monotone" dataKey="leave" stackId="3" stroke="#64748b" fill="#cbd5e1" name="Leave" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
+        {operations ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Recent attendance activity</h3>
+              <p className="text-xs text-slate-600">Today&apos;s marks, newest first</p>
+              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-sm">
+                {operations.recent_attendance.length === 0 ? (
+                  <li className="text-slate-600">No attendance recorded yet today.</li>
+                ) : (
+                  operations.recent_attendance.map((row, i) => (
+                    <li
+                      key={`${row.student_code}-${row.at}-${i}`}
+                      className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
+                    >
+                      <span className="font-medium text-slate-900">
+                        {row.student_name}{" "}
+                        <span className="font-normal text-slate-500">· Class {row.class_year}</span>
+                      </span>
+                      <span className="text-xs font-semibold text-slate-600">
+                        {row.status}
+                        <span className="ml-2 font-normal text-slate-400">
+                          {new Date(row.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <p className="text-sm font-semibold text-slate-900">Leave trend</p>
-            <p className="text-xs text-slate-600">Leave marks per day</p>
-            <div className="erp-chart-viewport">
-              {leaveTrend.length === 0 ? (
-                <p className="text-sm text-slate-600">No leave marks in this range.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={leaveTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="leave_count" fill="#2563eb" name="Leave" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Recently added students</h3>
+              <p className="text-xs text-slate-600">Latest enrollments in your hostel</p>
+              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-sm">
+                {operations.recent_students.length === 0 ? (
+                  <li className="text-slate-600">No students yet.</li>
+                ) : (
+                  operations.recent_students.map((s) => (
+                    <li
+                      key={s.student_id}
+                      className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
+                    >
+                      <span className="font-medium text-slate-900">{s.name}</span>
+                      <span className="text-xs text-slate-500">
+                        {s.student_id} · Class {s.class_year}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <p className="text-sm font-semibold text-slate-900">Daily attendance summary</p>
-            <p className="text-xs text-slate-600">Today&apos;s hostel-wide snapshot</p>
-            <div className="erp-chart-viewport">
-              {dailySummary.length === 0 ? (
-                <p className="text-sm text-slate-600">No attendance captured for today yet.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailySummary.map((d) => ({ name: d.status, count: d.count }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#1d4ed8" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Leave today</h3>
+              <p className="text-xs text-slate-600">Students marked on leave for today&apos;s roll</p>
+              <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto text-sm">
+                {operations.leave_today.length === 0 ? (
+                  <li className="text-slate-600">No leave marks today.</li>
+                ) : (
+                  operations.leave_today.map((s) => (
+                    <li key={s.student_id} className="border-b border-slate-100 py-2 last:border-0">
+                      <span className="font-medium text-slate-900">{s.name}</span>
+                      <span className="ml-2 text-xs text-slate-500">
+                        {s.student_id} · Class {s.class_year}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <p className="text-sm font-semibold text-slate-900">Student status distribution</p>
-            <p className="text-xs text-slate-600">Operational mix</p>
-            <div className="erp-chart-viewport">
-              {pieData.length === 0 ? (
-                <p className="text-sm text-slate-600">No students found.</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
-                      {pieData.map((entry, index) => (
-                        <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Occupancy snapshot</h3>
+              <p className="text-xs text-slate-600">Beds and rooms at a glance</p>
+              {occ ? (
+                <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Rooms</dt>
+                    <dd className="text-lg font-semibold text-slate-900">{occ.room_count}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Beds filled</dt>
+                    <dd className="text-lg font-semibold text-slate-900">
+                      {occ.occupied_beds}/{occ.total_bed_capacity}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Empty rooms</dt>
+                    <dd className="text-lg font-semibold text-emerald-800">{occ.empty_rooms}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Full rooms</dt>
+                    <dd className="text-lg font-semibold text-rose-800">{occ.full_rooms}</dd>
+                  </div>
+                </dl>
+              ) : null}
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5 lg:col-span-2">
+              <h3 className="text-sm font-semibold text-slate-900">Notification activity</h3>
+              <p className="text-xs text-slate-600">Latest inbox items</p>
+              <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm">
+                {operations.notification_activity.length === 0 ? (
+                  <li className="text-slate-600">No notifications.</li>
+                ) : (
+                  operations.notification_activity.map((n) => (
+                    <li
+                      key={n.id}
+                      className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
+                    >
+                      <span className={`font-medium ${n.read ? "text-slate-600" : "text-slate-900"}`}>
+                        {n.title}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {n.category.replaceAll("_", " ")} · {new Date(n.created_at).toLocaleString()}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
           </div>
-        </div>
+        ) : null}
       </AsyncState>
 
       <div className="erp-main-aside">
@@ -362,7 +326,7 @@ export function WardenDashboardHomePage() {
           <h3 className="text-sm font-semibold text-slate-900">Quick actions</h3>
           <p className="mt-1 text-xs text-slate-600">Jump straight into daily workflows.</p>
           <div className="mt-4 grid gap-2">
-            <Button type="button" onClick={() => navigate("/warden/students?create=1")}>
+            <Button type="button" onClick={() => navigate("/warden/students?class=11&create=1")}>
               Add student
             </Button>
             <Button type="button" variant="secondary" onClick={() => navigate("/warden/attendance")}>

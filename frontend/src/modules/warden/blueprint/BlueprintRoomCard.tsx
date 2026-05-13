@@ -7,14 +7,14 @@ import { roomPixelRect } from "@/modules/warden/blueprint/blueprintGeometry";
 /** Minimal, blueprint-like room plate — state only via border/fill tone (no chips or badges). */
 const STATUS_CLASS: Record<BlueprintDisplayStatus, string> = {
   EMPTY:
-    "border-slate-500/60 bg-slate-900/40 text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+    "border-emerald-800/45 bg-emerald-950/35 text-emerald-100/95 shadow-[inset_0_1px_0_rgba(167,243,208,0.08)]",
   PARTIAL:
-    "border-amber-500/45 bg-amber-500/[0.07] text-amber-50/95 shadow-[inset_0_1px_0_rgba(251,191,36,0.12)]",
+    "border-amber-700/40 bg-amber-950/30 text-amber-100/90 shadow-[inset_0_1px_0_rgba(251,191,36,0.1)]",
   FULL:
-    "border-emerald-500/45 bg-emerald-500/[0.08] text-emerald-50/95 shadow-[inset_0_1px_0_rgba(52,211,153,0.12)]",
+    "border-rose-800/50 bg-rose-950/40 text-rose-100/95 shadow-[inset_0_1px_0_rgba(251,113,133,0.1)]",
   MAINTENANCE:
-    "border-rose-500/50 bg-rose-950/35 text-rose-100/90 shadow-[inset_0_1px_0_rgba(251,113,133,0.12)]",
-  LOCKED: "border-slate-600/70 bg-slate-950/80 text-slate-300",
+    "border-red-950/70 bg-red-950/55 text-red-100/90 shadow-[inset_0_1px_0_rgba(127,29,29,0.35)]",
+  LOCKED: "border-slate-700/75 bg-slate-950/85 text-slate-400",
 };
 
 export interface BlueprintRoomCardProps {
@@ -48,10 +48,10 @@ function BlueprintRoomCardInner({ room, dimmed, onSelect }: BlueprintRoomCardPro
         if (!dimmed) onSelect(room.id);
       }}
     >
-      <span className="select-none font-mono text-[clamp(0.95rem,2.6vw,1.35rem)] font-semibold leading-none tracking-tight text-white">
+      <span className="select-none font-mono text-[clamp(0.95rem,2.6vw,1.35rem)] font-semibold leading-none tracking-tight text-inherit">
         {room.room_number}
       </span>
-      <span className="select-none font-mono text-[clamp(0.7rem,1.8vw,0.95rem)] font-medium tabular-nums text-slate-300/95">
+      <span className="select-none font-mono text-[clamp(0.7rem,1.8vw,0.95rem)] font-medium tabular-nums opacity-80">
         {room.occupancy} / {room.capacity}
       </span>
     </motion.button>

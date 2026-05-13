@@ -196,6 +196,121 @@ export async function getCharts(hostelId, range) {
 }
 
 /**
+ * Operational widgets for warden home (replaces chart-heavy panels).
+ * @param {string} hostelId
+ */
+export async function getOperationalSnapshot(hostelId) {
+  const today = utcDateOnly(new Date());
+
+  const [recentAttendanceRows, recentStudents, leaveTodayMarks, notificationRows, rooms] =
+    await Promise.all([
+      prisma.attendance.findMany({
+        where: { student: { hostel_id: hostelId }, attendance_date: today },
+        orderBy: { created_at: "desc" },
+        take: 10,
+        select: {
+          created_at: true,
+          status: true,
+          student: { select: { name: true, student_id: true, class_year: true } },
+        },
+      }),
+      prisma.student.findMany({
+        where: { hostel_id: hostelId },
+        orderBy: { created_at: "desc" },
+        take: 6,
+        select: {
+          name: true,
+          student_id: true,
+          class_year: true,
+          created_at: true,
+        },
+      }),
+      prisma.attendance.findMany({
+        where: {
+          attendance_date: today,
+          status: "LEAVE",
+          student: { hostel_id: hostelId },
+        },
+        take: 12,
+        select: {
+          student: { select: { name: true, student_id: true, class_year: true } },
+        },
+      }),
+      prismaOrFallback(
+        () =>
+          prisma.wardenNotification.findMany({
+            where: { hostel_id: hostelId },
+            orderBy: { created_at: "desc" },
+            take: 8,
+            select: {
+              id: true,
+              title: true,
+              category: true,
+              read: true,
+              created_at: true,
+            },
+          }),
+        [],
+      ),
+      prisma.room.findMany({
+        where: { hostel_id: hostelId },
+        select: {
+          room_number: true,
+          capacity: true,
+          current_occupancy: true,
+          status: true,
+        },
+      }),
+    ]);
+
+  let occupiedBeds = 0;
+  let totalBedCapacity = 0;
+  let emptyRooms = 0;
+  let fullRooms = 0;
+  for (const r of rooms) {
+    totalBedCapacity += r.capacity;
+    occupiedBeds += Math.min(r.current_occupancy, r.capacity);
+    if (r.status === "ACTIVE" && r.current_occupancy === 0) emptyRooms += 1;
+    if (r.capacity > 0 && r.current_occupancy >= r.capacity) fullRooms += 1;
+  }
+
+  return {
+    recent_attendance: recentAttendanceRows.map((row) => ({
+      at: row.created_at.toISOString(),
+      status: row.status,
+      student_name: row.student.name,
+      student_code: row.student.student_id,
+      class_year: row.student.class_year,
+    })),
+    recent_students: recentStudents.map((s) => ({
+      name: s.name,
+      student_id: s.student_id,
+      class_year: s.class_year,
+      created_at: s.created_at.toISOString(),
+    })),
+    leave_today: leaveTodayMarks.map((row) => ({
+      name: row.student.name,
+      student_id: row.student.student_id,
+      class_year: row.student.class_year,
+    })),
+    notification_activity: notificationRows.map((n) => ({
+      id: n.id,
+      title: n.title,
+      category: n.category,
+      read: n.read,
+      created_at: n.created_at.toISOString(),
+    })),
+    occupancy_snapshot: {
+      room_count: rooms.length,
+      total_bed_capacity: totalBedCapacity,
+      occupied_beds: occupiedBeds,
+      empty_rooms: emptyRooms,
+      full_rooms: fullRooms,
+    },
+  };
+}
+
+/**
  * @param {Date} d
  */
 function utcDateOnly(d) {

@@ -5,6 +5,7 @@ import {
   parseAttendanceHistory,
   parseCharts,
   parseDashboardStats,
+  parseWardenOperations,
   parseLeaveRecords,
   parseNotifications,
   parseObservation,
@@ -47,6 +48,11 @@ export async function fetchWardenDashboardCharts(
     signal,
   });
   return guardParse(() => parseCharts(data));
+}
+
+export async function fetchWardenDashboardOperations(signal: AbortSignal) {
+  const data = await wardenRequest<unknown>("/api/warden/dashboard/operations", { signal });
+  return guardParse(() => parseWardenOperations(data));
 }
 
 export async function fetchWardenStudents(

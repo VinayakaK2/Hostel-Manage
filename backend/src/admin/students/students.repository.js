@@ -6,7 +6,11 @@ import { prisma } from "../../lib/prisma.js";
 export function buildStudentWhere(query) {
   /** @type {import("@prisma/client").Prisma.StudentWhereInput} */
   const where = {};
-  if (query.gender) where.gender = query.gender;
+  if (query.gender) {
+    const g = query.gender;
+    where.gender = g === "BOYS" ? "MALE" : g === "GIRLS" ? "FEMALE" : g;
+  }
+  if (query.class !== undefined) where.class_year = query.class;
   if (query.status) where.status = query.status;
   if (query.hostelId) where.hostel_id = query.hostelId;
   if (query.search) {
@@ -58,6 +62,7 @@ export async function listStudents(where, orderBy, skip, take) {
       student_id: true,
       name: true,
       gender: true,
+      class_year: true,
       course: true,
       phone: true,
       parent_contact: true,
@@ -77,6 +82,7 @@ export async function findStudentById(id) {
       student_id: true,
       name: true,
       gender: true,
+      class_year: true,
       course: true,
       phone: true,
       parent_contact: true,

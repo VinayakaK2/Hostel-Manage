@@ -117,6 +117,7 @@ async function main() {
       student_id: "STU2025010",
       name: "Aisha Khan",
       gender: "FEMALE",
+      class_year: 11,
       course: "B.Arch",
       phone: "+91-9000000010",
       parent_contact: "+91-9100000010",
@@ -128,6 +129,7 @@ async function main() {
       student_id: "STU2025011",
       name: "Sneha Reddy",
       gender: "FEMALE",
+      class_year: 12,
       course: "MBA",
       phone: "+91-9000000011",
       parent_contact: "+91-9100000011",
@@ -150,6 +152,7 @@ async function main() {
         room_id: s.room_id,
         status: s.status,
         gender: s.gender,
+        class_year: s.class_year,
       },
     });
   }

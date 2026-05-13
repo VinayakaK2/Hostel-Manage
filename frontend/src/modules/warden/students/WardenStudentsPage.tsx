@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -26,6 +26,10 @@ const studentFormSchema = z.object({
   student_id: z.string().trim().min(3).max(32),
   name: z.string().trim().min(2).max(120),
   gender: z.enum(["MALE", "FEMALE"]),
+  class_year: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : Number(v)),
+    z.union([z.literal(11), z.literal(12)]),
+  ),
   course: z.string().trim().min(2).max(120),
   phone: z.string().trim().max(20).optional().nullable(),
   parent_contact: z.string().trim().min(6).max(64),
@@ -34,6 +38,7 @@ const studentFormSchema = z.object({
 });
 
 type StudentForm = z.infer<typeof studentFormSchema>;
+const studentFormResolver = zodResolver(studentFormSchema) as Resolver<StudentForm>;
 
 export function WardenStudentsPage() {
   const navigate = useNavigate();
@@ -48,6 +53,9 @@ export function WardenStudentsPage() {
   const page = Number(params.get("page") ?? "1") || 1;
   const status = params.get("status") ?? "";
   const gender = params.get("gender") ?? "";
+  const classParam = params.get("class");
+  const selectedClass =
+    classParam === "11" || classParam === "12" ? (Number(classParam) as 11 | 12) : null;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,34 +69,44 @@ export function WardenStudentsPage() {
   const [disableId, setDisableId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(params.get("create") === "1");
 
+  useEffect(() => {
+    if (params.get("create") === "1") setAddOpen(true);
+  }, [params]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const ac = new AbortController();
     try {
-      const [list, rms] = await Promise.all([
-        fetchWardenStudents(
-          {
-            page,
-            limit: 20,
-            search: debouncedSearch || undefined,
-            status: status || undefined,
-            gender: gender || undefined,
-          },
-          ac.signal,
-        ),
-        fetchWardenRooms(ac.signal),
-      ]);
+      const rms = await fetchWardenRooms(ac.signal);
+      setRooms(rms.map((x) => ({ id: x.id, room_number: x.room_number })));
+
+      if (selectedClass == null) {
+        setRows([]);
+        setMeta({ total: 0, page: 1, limit: 20, totalPages: 1 });
+        return;
+      }
+
+      const list = await fetchWardenStudents(
+        {
+          page,
+          limit: 20,
+          search: debouncedSearch || undefined,
+          status: status || undefined,
+          gender: gender || undefined,
+          class: selectedClass,
+        },
+        ac.signal,
+      );
       setRows(list.items);
       setMeta(list.meta);
-      setRooms(rms.map((x) => ({ id: x.id, room_number: x.room_number })));
     } catch (e) {
       if (e instanceof WardenClientError && e.failure === "ABORTED") return;
       setError(e instanceof WardenClientError ? e.message : "Unable to load students.");
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, status, gender]);
+  }, [page, debouncedSearch, status, gender, selectedClass]);
 
   useEffect(() => {
     void load();
@@ -104,11 +122,12 @@ export function WardenStudentsPage() {
   };
 
   const addForm = useForm<StudentForm>({
-    resolver: zodResolver(studentFormSchema),
+    resolver: studentFormResolver,
     defaultValues: {
       student_id: "",
       name: "",
       gender: "MALE",
+      class_year: 11,
       course: "",
       phone: "",
       parent_contact: "",
@@ -117,8 +136,14 @@ export function WardenStudentsPage() {
     },
   });
 
+  useEffect(() => {
+    if (selectedClass != null) {
+      addForm.setValue("class_year", selectedClass);
+    }
+  }, [selectedClass, addForm]);
+
   const editForm = useForm<StudentForm>({
-    resolver: zodResolver(studentFormSchema),
+    resolver: studentFormResolver,
   });
 
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchWardenStudent>> | null>(null);
@@ -136,6 +161,7 @@ export function WardenStudentsPage() {
             student_id: d.student_id,
             name: d.name,
             gender: d.gender,
+            class_year: d.class_year === 12 ? 12 : 11,
             course: d.course,
             phone: d.phone ?? "",
             parent_contact: d.parent_contact,
@@ -158,12 +184,41 @@ export function WardenStudentsPage() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Student roster</h2>
           <p className="text-sm text-slate-600">
-            Scoped to your hostel. All server requests enforce hostel isolation.
+            Choose a class first; the list loads from the server for that class only.
           </p>
         </div>
-        <Button type="button" onClick={() => setAddOpen(true)}>
+        <Button type="button" onClick={() => setAddOpen(true)} disabled={selectedClass == null}>
           Add student
         </Button>
+      </div>
+
+      <div
+        className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
+        role="tablist"
+        aria-label="Class"
+      >
+        <button
+          type="button"
+          className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+            selectedClass === 11
+              ? "border-brand-600 bg-brand-600 text-white shadow-sm"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          }`}
+          onClick={() => updateQuery({ class: "11", page: "1" })}
+        >
+          Class 11
+        </button>
+        <button
+          type="button"
+          className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+            selectedClass === 12
+              ? "border-brand-600 bg-brand-600 text-white shadow-sm"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          }`}
+          onClick={() => updateQuery({ class: "12", page: "1" })}
+        >
+          Class 12
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -199,20 +254,29 @@ export function WardenStudentsPage() {
         </label>
       </div>
 
+      {selectedClass == null ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center text-sm text-slate-600">
+          Select <span className="font-semibold text-slate-900">Class 11</span> or{" "}
+          <span className="font-semibold text-slate-900">Class 12</span> to view and manage students.
+        </div>
+      ) : null}
+
       <AsyncState
         loading={loading}
         error={error}
-        empty={!loading && !error && rows.length === 0}
+        empty={selectedClass != null && !loading && !error && rows.length === 0}
         onRetry={() => void load()}
         emptyTitle="No students match"
         emptyDescription="Adjust filters or add a new student."
       >
+        {selectedClass == null ? null : (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
               <tr>
                 <th className="px-4 py-3">Student ID</th>
                 <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Class</th>
                 <th className="px-4 py-3">Course</th>
                 <th className="px-4 py-3">Room</th>
                 <th className="px-4 py-3">Phone</th>
@@ -227,6 +291,7 @@ export function WardenStudentsPage() {
                 <tr key={s.id} className="hover:bg-slate-50/80">
                   <td className="px-4 py-3 font-mono text-xs text-slate-800">{s.student_id}</td>
                   <td className="px-4 py-3 font-medium text-slate-900">{s.name}</td>
+                  <td className="px-4 py-3 text-slate-700">{s.class_year}</td>
                   <td className="px-4 py-3 text-slate-700">{s.course}</td>
                   <td className="px-4 py-3">{s.room?.room_number ?? "—"}</td>
                   <td className="px-4 py-3">{s.phone ?? "—"}</td>
@@ -258,8 +323,10 @@ export function WardenStudentsPage() {
             </tbody>
           </table>
         </div>
+        )}
       </AsyncState>
 
+      {selectedClass == null ? null : (
       <div className="flex items-center justify-between text-sm text-slate-600">
         <p>
           Page {meta.page} of {meta.totalPages} · {meta.total} students
@@ -281,6 +348,7 @@ export function WardenStudentsPage() {
           </Button>
         </div>
       </div>
+      )}
 
       <AppModal
         open={addOpen}
@@ -326,6 +394,16 @@ export function WardenStudentsPage() {
               <option value="FEMALE">Female</option>
             </select>
           </label>
+          <label className="text-sm font-medium text-slate-700">
+            Class
+            <select
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+              {...addForm.register("class_year", { valueAsNumber: true })}
+            >
+              <option value={11}>Class 11</option>
+              <option value={12}>Class 12</option>
+            </select>
+          </label>
           <TextField label="Course" {...addForm.register("course")} />
           <TextField label="Phone" {...addForm.register("phone")} />
           <TextField label="Parent contact" {...addForm.register("parent_contact")} />
@@ -360,6 +438,10 @@ export function WardenStudentsPage() {
             <div className="flex justify-between gap-4">
               <dt className="text-slate-500">Name</dt>
               <dd className="font-medium">{detail.name}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-slate-500">Class</dt>
+              <dd className="font-medium">{detail.class_year}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-slate-500">Parent</dt>
@@ -412,6 +494,16 @@ export function WardenStudentsPage() {
         <div className="grid gap-3">
           <TextField label="Student ID" {...editForm.register("student_id")} />
           <TextField label="Name" {...editForm.register("name")} />
+          <label className="text-sm font-medium text-slate-700">
+            Class
+            <select
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+              {...editForm.register("class_year", { valueAsNumber: true })}
+            >
+              <option value={11}>Class 11</option>
+              <option value={12}>Class 12</option>
+            </select>
+          </label>
           <TextField label="Course" {...editForm.register("course")} />
           <TextField label="Phone" {...editForm.register("phone")} />
           <TextField label="Parent contact" {...editForm.register("parent_contact")} />

@@ -41,6 +41,7 @@ export function buildWhere(query, hostelId) {
   /** @type {import("@prisma/client").Prisma.StudentWhereInput} */
   const where = { hostel_id: hostelId };
   if (query.gender) where.gender = query.gender;
+  if (query.class !== undefined) where.class_year = query.class;
   if (query.status) where.status = query.status;
   if (query.search) {
     where.OR = [
@@ -88,6 +89,7 @@ export async function listStudents(query, hostelId) {
         student_id: true,
         name: true,
         gender: true,
+        class_year: true,
         course: true,
         phone: true,
         parent_contact: true,
@@ -129,6 +131,7 @@ export async function getStudent(id, hostelId) {
       student_id: true,
       name: true,
       gender: true,
+      class_year: true,
       course: true,
       phone: true,
       parent_contact: true,
@@ -181,6 +184,7 @@ export async function createStudent(input, hostelId, wardenId) {
         student_id: input.student_id,
         name: input.name,
         gender: input.gender,
+        class_year: input.class_year ?? 11,
         course: input.course,
         phone: input.phone ?? null,
         parent_contact: input.parent_contact,
@@ -193,6 +197,7 @@ export async function createStudent(input, hostelId, wardenId) {
         student_id: true,
         name: true,
         gender: true,
+        class_year: true,
         course: true,
         phone: true,
         parent_contact: true,
@@ -252,6 +257,7 @@ export async function updateStudent(id, input, hostelId, wardenId) {
       student_id: input.student_id ?? undefined,
       name: input.name ?? undefined,
       gender: input.gender ?? undefined,
+      class_year: input.class_year ?? undefined,
       course: input.course ?? undefined,
       phone: input.phone === null ? null : input.phone ?? undefined,
       parent_contact: input.parent_contact ?? undefined,
@@ -262,6 +268,7 @@ export async function updateStudent(id, input, hostelId, wardenId) {
       student_id: true,
       name: true,
       gender: true,
+      class_year: true,
       course: true,
       phone: true,
       parent_contact: true,

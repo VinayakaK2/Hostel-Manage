@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminClientError } from "@/lib/api/adminClient";
@@ -22,6 +22,10 @@ const studentFormSchema = z.object({
   student_id: z.string().trim().min(3).max(32),
   name: z.string().trim().min(2).max(120),
   gender: z.enum(["MALE", "FEMALE"]),
+  class_year: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : Number(v)),
+    z.union([z.literal(11), z.literal(12)]),
+  ),
   course: z.string().trim().min(2).max(120),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   parent_contact: z.string().trim().min(6).max(32),
@@ -31,6 +35,7 @@ const studentFormSchema = z.object({
 });
 
 type StudentFormValues = z.infer<typeof studentFormSchema>;
+const studentFormResolver = zodResolver(studentFormSchema) as Resolver<StudentFormValues>;
 
 function StudentTable({
   rows,
@@ -53,6 +58,7 @@ function StudentTable({
             <tr>
               <th className="px-4 py-3">Student ID</th>
               <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Class</th>
               <th className="px-4 py-3">Course</th>
               <th className="px-4 py-3">Hostel</th>
               <th className="px-4 py-3">Room</th>
@@ -66,6 +72,7 @@ function StudentTable({
               <tr key={s.id} className="hover:bg-slate-50/80">
                 <td className="px-4 py-3 font-mono text-xs text-slate-800">{s.student_id}</td>
                 <td className="px-4 py-3 font-semibold text-slate-900">{s.name}</td>
+                <td className="px-4 py-3 text-slate-700">{s.class_year}</td>
                 <td className="px-4 py-3 text-slate-700">{s.course}</td>
                 <td className="px-4 py-3 text-slate-700">{s.hostel.name}</td>
                 <td className="px-4 py-3 text-slate-700">{s.room?.room_number ?? "—"}</td>
@@ -109,11 +116,15 @@ function StudentTable({
 function StudentSection({
   title,
   description,
-  gender,
+  genderForm,
+  listGender,
+  classYear,
 }: {
   title: string;
   description: string;
-  gender: "MALE" | "FEMALE";
+  genderForm: "MALE" | "FEMALE";
+  listGender: "BOYS" | "GIRLS";
+  classYear: 11 | 12;
 }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -138,20 +149,27 @@ function StudentSection({
     void listHostels({ page: 1, limit: 100, status: "ACTIVE" }, ac.signal)
       .then((h) => {
         const filtered = h.items.filter((x) =>
-          gender === "MALE" ? x.type === "BOYS" : x.type === "GIRLS",
+          genderForm === "MALE" ? x.type === "BOYS" : x.type === "GIRLS",
         );
         setHostels(filtered.map((x) => ({ id: x.id, label: x.name })));
       })
       .catch(() => setHostels([]));
     return () => ac.abort();
-  }, [gender]);
+  }, [genderForm]);
 
   useEffect(() => {
     const ac = new AbortController();
     setLoading(true);
     setError(null);
     void listStudents(
-      { page, limit: 10, search: search.trim() || undefined, gender, sort: "name_asc" },
+      {
+        page,
+        limit: 10,
+        search: search.trim() || undefined,
+        gender: listGender,
+        class: classYear,
+        sort: "name_asc",
+      },
       ac.signal,
     )
       .then((res) => {
@@ -164,14 +182,15 @@ function StudentSection({
       })
       .finally(() => setLoading(false));
     return () => ac.abort();
-  }, [gender, page, search, reloadKey]);
+  }, [listGender, classYear, page, search, reloadKey]);
 
   const form = useForm<StudentFormValues>({
-    resolver: zodResolver(studentFormSchema),
+    resolver: studentFormResolver,
     defaultValues: {
       student_id: "",
       name: "",
-      gender,
+      gender: genderForm,
+      class_year: classYear,
       course: "",
       phone: "",
       parent_contact: "",
@@ -182,7 +201,7 @@ function StudentSection({
   });
 
   const editForm = useForm<StudentFormValues>({
-    resolver: zodResolver(studentFormSchema),
+    resolver: studentFormResolver,
   });
 
   useEffect(() => {
@@ -190,7 +209,8 @@ function StudentSection({
     form.reset({
       student_id: "",
       name: "",
-      gender,
+      gender: genderForm,
+      class_year: classYear,
       course: "",
       phone: "",
       parent_contact: "",
@@ -198,7 +218,7 @@ function StudentSection({
       room_id: "",
       status: "ACTIVE",
     });
-  }, [addOpen, gender, hostels, form]);
+  }, [addOpen, genderForm, classYear, hostels, form]);
 
   const hostelIdWatch = form.watch("hostel_id");
   useEffect(() => {
@@ -287,6 +307,7 @@ function StudentSection({
               student_id: s.student_id,
               name: s.name,
               gender: s.gender,
+              class_year: s.class_year === 12 ? 12 : 11,
               course: s.course,
               phone: s.phone ?? "",
               parent_contact: s.parent_contact,
@@ -344,6 +365,10 @@ function StudentSection({
               <dd className="text-slate-900">{view.name}</dd>
             </div>
             <div>
+              <dt className="text-xs font-semibold uppercase text-slate-500">Class</dt>
+              <dd className="text-slate-900">{view.class_year}</dd>
+            </div>
+            <div>
               <dt className="text-xs font-semibold uppercase text-slate-500">Course</dt>
               <dd className="text-slate-900">{view.course}</dd>
             </div>
@@ -397,6 +422,11 @@ function StudentSection({
         <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
           <TextField label="Student ID" {...form.register("student_id")} error={form.formState.errors.student_id?.message} />
           <TextField label="Full name" {...form.register("name")} error={form.formState.errors.name?.message} />
+          <input type="hidden" {...form.register("class_year", { valueAsNumber: true })} />
+          <p className="text-sm text-slate-700">
+            <span className="font-medium text-slate-900">Class {classYear}</span>
+            <span className="text-slate-500"> — new students in this list are assigned to this class.</span>
+          </p>
           <TextField label="Course" {...form.register("course")} error={form.formState.errors.course?.message} />
           <TextField label="Phone (optional)" {...form.register("phone")} error={form.formState.errors.phone?.message} />
           <TextField
@@ -444,6 +474,7 @@ function StudentSection({
                 await updateStudent(edit.id, {
                   student_id: values.student_id,
                   name: values.name,
+                  class_year: values.class_year,
                   course: values.course,
                   phone: values.phone || undefined,
                   parent_contact: values.parent_contact,
@@ -463,6 +494,16 @@ function StudentSection({
           <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
             <TextField label="Student ID" {...editForm.register("student_id")} error={editForm.formState.errors.student_id?.message} />
             <TextField label="Full name" {...editForm.register("name")} error={editForm.formState.errors.name?.message} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-slate-700">Class</label>
+              <select
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                {...editForm.register("class_year", { valueAsNumber: true })}
+              >
+                <option value={11}>Class 11</option>
+                <option value={12}>Class 12</option>
+              </select>
+            </div>
             <TextField label="Course" {...editForm.register("course")} error={editForm.formState.errors.course?.message} />
             <TextField label="Phone" {...editForm.register("phone")} error={editForm.formState.errors.phone?.message} />
             <TextField
@@ -535,6 +576,12 @@ function StudentSection({
 
 export function AdminStudentsPage() {
   const [cohort, setCohort] = useState<null | "MALE" | "FEMALE">(null);
+  const [classYear, setClassYear] = useState<null | 11 | 12>(null);
+
+  const pill =
+    "inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2";
+  const pillOff = "border-slate-200 bg-white text-slate-600 hover:border-slate-300";
+  const pillOn = "border-brand-600 bg-brand-600 text-white shadow-sm";
 
   return (
     <div className="erp-page-wide">
@@ -544,7 +591,7 @@ export function AdminStudentsPage() {
           Student management
         </h2>
         <p className="mt-1 max-w-3xl text-sm text-slate-600">
-          Choose boys or girls to open the matching student list, search, and actions for that cohort.
+          Choose boys or girls, then a class. Lists load from the server with the matching cohort and class only.
         </p>
       </div>
 
@@ -561,10 +608,10 @@ export function AdminStudentsPage() {
             <span>
               <span className="block text-lg font-semibold text-slate-900">Boys</span>
               <span className="mt-1 block text-sm text-slate-600">
-                Male students in boys hostels — tap to view and manage.
+                Male students in boys hostels — tap to choose a class.
               </span>
             </span>
-            <span className="text-sm font-semibold text-brand-700 group-hover:underline">Open boys list →</span>
+            <span className="text-sm font-semibold text-brand-700 group-hover:underline">Continue →</span>
           </button>
           <button
             type="button"
@@ -577,34 +624,99 @@ export function AdminStudentsPage() {
             <span>
               <span className="block text-lg font-semibold text-slate-900">Girls</span>
               <span className="mt-1 block text-sm text-slate-600">
-                Female students in girls hostels — tap to view and manage.
+                Female students in girls hostels — tap to choose a class.
               </span>
             </span>
-            <span className="text-sm font-semibold text-rose-700 group-hover:underline">Open girls list →</span>
+            <span className="text-sm font-semibold text-rose-700 group-hover:underline">Continue →</span>
           </button>
+        </div>
+      ) : classYear === null ? (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setCohort(null);
+                setClassYear(null);
+              }}
+            >
+              ← Boys / Girls
+            </Button>
+          </div>
+          <p className="text-sm text-slate-600">
+            <span className="font-semibold text-slate-900">{cohort === "MALE" ? "Boys" : "Girls"}</span> — pick a
+            class to load students.
+          </p>
+          <div
+            className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
+            role="tablist"
+            aria-label="Class"
+          >
+            <button type="button" className={`${pill} ${pillOff}`} onClick={() => setClassYear(11)}>
+              Class 11
+            </button>
+            <button type="button" className={`${pill} ${pillOff}`} onClick={() => setClassYear(12)}>
+              Class 12
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" variant="secondary" onClick={() => setCohort(null)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" onClick={() => setClassYear(null)}>
+              ← Class
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setCohort(null);
+                setClassYear(null);
+              }}
+            >
               ← Boys / Girls
             </Button>
-            <p className="text-sm text-slate-600">
-              Showing <span className="font-semibold text-slate-900">{cohort === "MALE" ? "Boys" : "Girls"}</span>{" "}
-              students only.
-            </p>
+          </div>
+          <div
+            className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
+            role="tablist"
+            aria-label="Class"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={classYear === 11}
+              className={`${pill} ${classYear === 11 ? pillOn : pillOff}`}
+              onClick={() => setClassYear(11)}
+            >
+              Class 11
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={classYear === 12}
+              className={`${pill} ${classYear === 12 ? pillOn : pillOff}`}
+              onClick={() => setClassYear(12)}
+            >
+              Class 12
+            </button>
           </div>
           {cohort === "MALE" ? (
             <StudentSection
-              title="Boys students"
-              description="Male students housed in boys hostels."
-              gender="MALE"
+              title={`Boys — Class ${classYear}`}
+              description="Male students in boys hostels for the selected class."
+              genderForm="MALE"
+              listGender="BOYS"
+              classYear={classYear}
             />
           ) : (
             <StudentSection
-              title="Girls students"
-              description="Female students housed in girls hostels."
-              gender="FEMALE"
+              title={`Girls — Class ${classYear}`}
+              description="Female students in girls hostels for the selected class."
+              genderForm="FEMALE"
+              listGender="GIRLS"
+              classYear={classYear}
             />
           )}
         </div>
