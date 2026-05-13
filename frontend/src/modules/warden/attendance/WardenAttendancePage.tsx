@@ -156,8 +156,8 @@ export function WardenAttendancePage() {
   };
 
   return (
-    <div className="erp-page-tight">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className="shrink-0 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Attendance management</h2>
           <p className="text-sm text-slate-600">
@@ -186,6 +186,7 @@ export function WardenAttendancePage() {
         </div>
       </div>
 
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <AsyncState
         loading={loading}
         error={error}
@@ -194,7 +195,7 @@ export function WardenAttendancePage() {
         emptyTitle="No students to mark"
         emptyDescription="Only active and on-leave residents appear here."
       >
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-card">
+        <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
               <tr>
@@ -253,6 +254,7 @@ export function WardenAttendancePage() {
           </table>
         </div>
       </AsyncState>
+      </div>
 
       <AppModal
         open={!!leaveModal}

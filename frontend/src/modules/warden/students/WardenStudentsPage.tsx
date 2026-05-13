@@ -178,26 +178,37 @@ export function WardenStudentsPage() {
     defaultValues: { room_id: "" },
   });
 
+  const editCourseWatch = editForm.watch("course");
+
   return (
-    <div className="erp-page-tight">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      {selectedClass == null ? (
+        <div className="shrink-0">
           <h2 className="text-lg font-semibold text-slate-900">Student roster</h2>
           <p className="text-sm text-slate-600">
             Choose a class first; the list loads from the server for that class only.
           </p>
         </div>
-        <Button type="button" onClick={() => setAddOpen(true)}>
-          Add student
-        </Button>
-      </div>
+      ) : (
+        <div className="shrink-0 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Student roster</h2>
+            <p className="text-sm text-slate-600">
+              Choose a class first; the list loads from the server for that class only.
+            </p>
+          </div>
+          <Button type="button" onClick={() => setAddOpen(true)}>
+            Add student
+          </Button>
+        </div>
+      )}
 
       {selectedClass == null ? (
-        <div className="erp-panel-grid mt-4">
+        <div className="mt-4 flex shrink-0 flex-wrap gap-4">
           <button
             type="button"
             onClick={() => updateQuery({ class: "11", page: "1" })}
-            className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-brand-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            className="group flex max-w-md flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-5 text-left shadow-card transition hover:border-brand-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-800 ring-1 ring-brand-200">
               11
@@ -213,7 +224,7 @@ export function WardenStudentsPage() {
           <button
             type="button"
             onClick={() => updateQuery({ class: "12", page: "1" })}
-            className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-rose-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
+            className="group flex max-w-md flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-5 text-left shadow-card transition hover:border-rose-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
           >
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-lg font-bold text-rose-800 ring-1 ring-rose-100">
               12
@@ -228,7 +239,8 @@ export function WardenStudentsPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4 mt-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <div className="shrink-0 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -301,9 +313,9 @@ export function WardenStudentsPage() {
               </select>
             </label>
           </div>
-        </div>
-      )}
+          </div>
 
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <AsyncState
         loading={loading}
         error={error}
@@ -313,7 +325,7 @@ export function WardenStudentsPage() {
         emptyDescription="Adjust filters or add a new student."
       >
         {selectedClass == null ? null : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-card">
+        <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
               <tr>
@@ -369,8 +381,7 @@ export function WardenStudentsPage() {
         )}
       </AsyncState>
 
-      {selectedClass == null ? null : (
-      <div className="flex items-center justify-between text-sm text-slate-600">
+      <div className="shrink-0 flex items-center justify-between text-sm text-slate-600">
         <p>
           Page {meta.page} of {meta.totalPages} · {meta.total} students
         </p>
@@ -391,6 +402,8 @@ export function WardenStudentsPage() {
           </Button>
         </div>
       </div>
+          </div>
+        </div>
       )}
 
       <AppModal
@@ -447,7 +460,17 @@ export function WardenStudentsPage() {
               <option value={12}>Class 12</option>
             </select>
           </label>
-          <TextField label="Course" {...addForm.register("course")} />
+          <label className="text-sm font-medium text-slate-700">
+            Course (PU stream)
+            <select className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" {...addForm.register("course")}>
+              <option value="">Select stream</option>
+              <option value="PCM">PCM</option>
+              <option value="PCMB">PCMB</option>
+            </select>
+          </label>
+          {addForm.formState.errors.course?.message ? (
+            <p className="text-sm text-rose-600">{addForm.formState.errors.course.message}</p>
+          ) : null}
           <TextField label="Phone" {...addForm.register("phone")} />
           <TextField label="Parent contact" {...addForm.register("parent_contact")} />
           <label className="text-sm font-medium text-slate-700">
@@ -547,7 +570,22 @@ export function WardenStudentsPage() {
               <option value={12}>Class 12</option>
             </select>
           </label>
-          <TextField label="Course" {...editForm.register("course")} />
+          <label className="text-sm font-medium text-slate-700">
+            Course (PU stream)
+            <select className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" {...editForm.register("course")}>
+              <option value="">Select stream</option>
+              {editCourseWatch && editCourseWatch !== "PCM" && editCourseWatch !== "PCMB" ? (
+                <option value={editCourseWatch}>
+                  {editCourseWatch} (current)
+                </option>
+              ) : null}
+              <option value="PCM">PCM</option>
+              <option value="PCMB">PCMB</option>
+            </select>
+          </label>
+          {editForm.formState.errors.course?.message ? (
+            <p className="text-sm text-rose-600">{editForm.formState.errors.course.message}</p>
+          ) : null}
           <TextField label="Phone" {...editForm.register("phone")} />
           <TextField label="Parent contact" {...editForm.register("parent_contact")} />
           <label className="text-sm font-medium text-slate-700">

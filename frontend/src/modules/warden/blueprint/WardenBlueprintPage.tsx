@@ -20,7 +20,6 @@ import {
   listCorridorMergedRects,
 } from "@/modules/warden/blueprint/blueprintGeometry";
 import { RoomDetailDrawer } from "@/modules/warden/blueprint/RoomDetailDrawer";
-import { BlueprintAddStudentSheet } from "@/modules/warden/blueprint/BlueprintAddStudentSheet";
 import { IconBell, IconChevron, IconMenu } from "@/modules/admin/components/icons";
 import { useAuth } from "@/hooks/useAuth";
 import { useWardenLayoutStore } from "@/stores/wardenLayoutStore";
@@ -74,8 +73,6 @@ export function WardenBlueprintPage() {
 
   const [viewport, setViewport] = useState({ w: 1200, h: 800 });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [addStudentOpen, setAddStudentOpen] = useState(false);
-
   const { user, logout } = useAuth();
   const toggleMobileNav = useWardenLayoutStore((s) => s.toggleMobileNav);
   const toggleSidebar = useWardenLayoutStore((s) => s.toggleSidebar);
@@ -328,45 +325,6 @@ export function WardenBlueprintPage() {
         </div>
       </div>
 
-      <div className="relative z-30 shrink-0 border-b border-slate-800/60 bg-slate-950 px-3 pb-2.5 pt-[52px] sm:px-4">
-        {!loading && floorState === "loaded" && hasRooms ? (
-          <div
-            className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-xl border border-slate-700/70 bg-slate-900/90 px-3 py-2.5 font-mono text-[11px] font-medium leading-snug text-slate-300 shadow-md sm:gap-x-6 sm:px-4"
-            role="region"
-            aria-label="Room blueprint legend and actions"
-          >
-            <span className="pointer-events-none flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]" />
-              <span>
-                <span className="text-emerald-300/95">Green</span> — empty
-              </span>
-            </span>
-            <span className="hidden h-3 w-px shrink-0 bg-slate-600 sm:inline" aria-hidden />
-            <span className="pointer-events-none flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
-              <span>
-                <span className="text-yellow-200/95">Yellow</span> — partial
-              </span>
-            </span>
-            <span className="hidden h-3 w-px shrink-0 bg-slate-600 sm:inline" aria-hidden />
-            <span className="pointer-events-none flex items-center gap-2">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-[0_0_10px_rgba(248,113,113,0.55)]" />
-              <span>
-                <span className="text-red-300/95">Red</span> — full
-              </span>
-            </span>
-            <span className="hidden h-3 w-px shrink-0 bg-slate-600 md:inline" aria-hidden />
-            <button
-              type="button"
-              className="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-brand-500 sm:px-4 sm:text-xs"
-              onClick={() => setAddStudentOpen(true)}
-            >
-              Add student
-            </button>
-          </div>
-        ) : null}
-      </div>
-
       <div
         ref={viewportRef}
         className="relative min-h-0 flex-1 overflow-hidden"
@@ -388,14 +346,53 @@ export function WardenBlueprintPage() {
           />
         ) : null}
 
+        {!loading && floorState === "loaded" && hasRooms ? (
+          <div
+            className="pointer-events-none absolute left-3 top-14 z-20 max-w-[min(100%,22rem)] rounded-xl border border-slate-700/70 bg-slate-950/85 px-2.5 py-2 font-mono text-[10px] font-medium leading-snug text-slate-300 shadow-lg backdrop-blur-sm sm:left-4 sm:max-w-[min(100%,28rem)] sm:px-3 sm:text-[11px]"
+            role="region"
+            aria-label="Room occupancy legend"
+          >
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 sm:gap-x-4">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]" />
+                <span>
+                  <span className="text-emerald-300/95">Green</span> — empty
+                </span>
+              </span>
+              <span className="hidden h-3 w-px shrink-0 bg-slate-600 sm:inline" aria-hidden />
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                <span>
+                  <span className="text-yellow-200/95">Yellow</span> — partial
+                </span>
+              </span>
+              <span className="hidden h-3 w-px shrink-0 bg-slate-600 sm:inline" aria-hidden />
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-[0_0_10px_rgba(248,113,113,0.55)]" />
+                <span>
+                  <span className="text-red-300/95">Red</span> — full
+                </span>
+              </span>
+            </div>
+          </div>
+        ) : null}
+
         <div className="pointer-events-none absolute bottom-6 right-5 z-30 flex flex-col items-stretch gap-2">
-          <div className="pointer-events-auto flex flex-col gap-2 rounded-2xl border border-slate-600/50 bg-slate-950/90 p-2 shadow-2xl backdrop-blur-md">
+          <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-2xl border border-slate-600/50 bg-slate-950/90 p-2 shadow-2xl backdrop-blur-md">
             <label className="sr-only" htmlFor="warden-blueprint-floor">
               Floor
             </label>
             <select
               id="warden-blueprint-floor"
-              className="cursor-pointer rounded-lg border border-slate-600/80 bg-slate-900/90 px-2.5 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              title="Floor"
+              className="h-10 w-10 shrink-0 cursor-pointer appearance-none rounded-xl border border-slate-600/80 text-center text-[10px] font-bold uppercase leading-none tracking-wide text-white shadow-sm ring-1 ring-slate-600/60 transition hover:bg-slate-700/90 hover:ring-brand-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-0 disabled:opacity-50 [&::-webkit-appearance]:appearance-none"
+              style={{
+                backgroundColor: "rgba(30, 41, 59, 0.9)",
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M3 4.5L6 8l3-3.5H3z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 3px center",
+                backgroundSize: "9px 9px",
+              }}
               value={overview ? selectedFloor : 1}
               disabled={!overview}
               onChange={(e) => setSelectedFloor(Number(e.target.value))}
@@ -568,14 +565,6 @@ export function WardenBlueprintPage() {
           </TransformWrapper>
         </div>
       </div>
-
-      <BlueprintAddStudentSheet
-        open={addStudentOpen}
-        onClose={() => setAddStudentOpen(false)}
-        onAssigned={() => {
-          bumpBlueprintRevision();
-        }}
-      />
 
       <RoomDetailDrawer
         open={detailOpen}

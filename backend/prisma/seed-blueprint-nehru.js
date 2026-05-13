@@ -83,7 +83,8 @@ const GIVEN_NAMES = [
   "Aniket",
 ];
 
-const COURSES = ["B.Tech CSE", "B.Tech ECE", "B.Tech ME", "B.Tech IT", "B.Arch", "MBA"];
+/** PU (11/12) science streams — not engineering degree labels */
+const COURSES = ["PCM", "PCMB"];
 
 const ATT_CYCLE = /** @type {const} */ (["PRESENT", "PRESENT", "ABSENT", "LEAVE"]);
 
