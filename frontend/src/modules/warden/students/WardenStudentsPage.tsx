@@ -112,10 +112,10 @@ export function WardenStudentsPage() {
     void load();
   }, [load]);
 
-  const updateQuery = (next: Record<string, string>) => {
+  const updateQuery = (next: Record<string, string | undefined>) => {
     const p = new URLSearchParams(params);
     for (const [k, v] of Object.entries(next)) {
-      if (!v) p.delete(k);
+      if (v === undefined || v === "") p.delete(k);
       else p.set(k, v);
     }
     setParams(p);

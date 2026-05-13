@@ -166,56 +166,54 @@ export function WardenDashboardHomePage() {
         emptyTitle="No dashboard data"
         emptyDescription="Try refreshing. If the issue persists, contact the administrator."
       >
+        <div className="erp-main-aside">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-slate-900">Recent activity</h3>
+              <span className="text-xs font-medium text-slate-500">Hostel-scoped audit trail</span>
+            </div>
+            <ul className="mt-4 divide-y divide-slate-100">
+              {activity.length === 0 ? (
+                <li className="py-6 text-center text-sm text-slate-600">No recent activity.</li>
+              ) : (
+                activity.map((row) => (
+                  <li key={row.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{row.title}</p>
+                      <p className="text-xs text-slate-600">{activityNarrative(row)}</p>
+                    </div>
+                    <p className="text-xs font-medium text-slate-500">
+                      {new Date(row.created_at).toLocaleString()}
+                    </p>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
 
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <h3 className="text-sm font-semibold text-slate-900">Quick actions</h3>
+            <p className="mt-1 text-xs text-slate-600">Jump straight into daily workflows.</p>
+            <div className="mt-4 grid gap-2">
+              <Button type="button" onClick={() => navigate("/warden/students?class=11&create=1")}>
+                Add student
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate("/warden/attendance")}>
+                Mark attendance
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate("/warden/observations")}>
+                Add observation
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate("/warden/blueprint")}>
+                Room blueprint
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => navigate("/warden/leave-records")}>
+                View leave records
+              </Button>
+            </div>
+          </section>
+        </div>
       </AsyncState>
-
-      <div className="erp-main-aside">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-900">Recent activity</h3>
-            <span className="text-xs font-medium text-slate-500">Hostel-scoped audit trail</span>
-          </div>
-          <ul className="mt-4 divide-y divide-slate-100">
-            {activity.length === 0 ? (
-              <li className="py-6 text-center text-sm text-slate-600">No recent activity.</li>
-            ) : (
-              activity.map((row) => (
-                <li key={row.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{row.title}</p>
-                    <p className="text-xs text-slate-600">{activityNarrative(row)}</p>
-                  </div>
-                  <p className="text-xs font-medium text-slate-500">
-                    {new Date(row.created_at).toLocaleString()}
-                  </p>
-                </li>
-              ))
-            )}
-          </ul>
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-slate-900">Quick actions</h3>
-          <p className="mt-1 text-xs text-slate-600">Jump straight into daily workflows.</p>
-          <div className="mt-4 grid gap-2">
-            <Button type="button" onClick={() => navigate("/warden/students?class=11&create=1")}>
-              Add student
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate("/warden/attendance")}>
-              Mark attendance
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate("/warden/observations")}>
-              Add observation
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate("/warden/blueprint")}>
-              Room blueprint
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => navigate("/warden/leave-records")}>
-              View leave records
-            </Button>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
