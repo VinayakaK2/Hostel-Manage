@@ -187,7 +187,7 @@ export function WardenStudentsPage() {
             Choose a class first; the list loads from the server for that class only.
           </p>
         </div>
-        <Button type="button" onClick={() => setAddOpen(true)} disabled={selectedClass == null}>
+        <Button type="button" onClick={() => setAddOpen(true)}>
           Add student
         </Button>
       </div>

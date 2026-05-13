@@ -9,7 +9,6 @@ import {
   IconDashboard,
   IconLayoutGrid,
   IconLogout,
-  IconShield,
   IconUsers,
 } from "@/modules/admin/components/icons";
 
@@ -21,7 +20,6 @@ function NavIcon({ to }: { to: string }) {
   if (to.includes("observations")) return <IconChart className="h-5 w-5" />;
   if (to.includes("leave")) return <IconChart className="h-5 w-5" />;
   if (to.includes("notifications")) return <IconBell className="h-5 w-5" />;
-  if (to.includes("profile")) return <IconShield className="h-5 w-5" />;
   return <IconDashboard className="h-5 w-5" />;
 }
 

@@ -57,10 +57,6 @@ const WardenNotificationsPage = lazy(() =>
     default: m.WardenNotificationsPage,
   })),
 );
-const WardenProfilePage = lazy(() =>
-  import("@/modules/warden/profile/WardenProfilePage").then((m) => ({ default: m.WardenProfilePage })),
-);
-
 function AdminFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center text-sm font-medium text-slate-600">
@@ -191,14 +187,6 @@ export function AppRouter() {
           element={
             <Suspense fallback={<WardenFallback />}>
               <WardenNotificationsPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="profile"
-          element={
-            <Suspense fallback={<WardenFallback />}>
-              <WardenProfilePage />
             </Suspense>
           }
         />

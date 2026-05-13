@@ -121,14 +121,6 @@ export function WardenTopbar() {
               role="menu"
               className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft"
             >
-              <Link
-                role="menuitem"
-                to="/warden/profile"
-                className="block px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                onClick={() => setMenuOpen(false)}
-              >
-                Profile
-              </Link>
               <button
                 role="menuitem"
                 type="button"

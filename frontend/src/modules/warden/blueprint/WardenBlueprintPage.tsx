@@ -9,7 +9,12 @@ import {
   fetchWardenRoomBlueprintDetail,
 } from "@/modules/warden/api/wardenApi";
 import { BlueprintRoomCard } from "@/modules/warden/blueprint/BlueprintRoomCard";
-import { computeBlueprintCanvasSize } from "@/modules/warden/blueprint/blueprintGeometry";
+import {
+  buildingOutlineRect,
+  computeBlueprintCanvasSize,
+  corridorCellRect,
+  listCorridorCells,
+} from "@/modules/warden/blueprint/blueprintGeometry";
 import { RoomDetailDrawer } from "@/modules/warden/blueprint/RoomDetailDrawer";
 import { useWardenBlueprintStore } from "@/stores/wardenBlueprintStore";
 
@@ -121,8 +126,18 @@ export function WardenBlueprintPage() {
 
   const canvasSize = useMemo(() => {
     if (!floorPayload?.rooms.length) return { width: 720, height: 560 };
-    return computeBlueprintCanvasSize(floorPayload.rooms);
-  }, [floorPayload?.rooms]);
+    return computeBlueprintCanvasSize(floorPayload.rooms, floorPayload.grid);
+  }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows, floorPayload?.rooms]);
+
+  const buildingOutline = useMemo(() => {
+    if (!floorPayload?.rooms.length) return null;
+    return buildingOutlineRect(floorPayload.rooms, floorPayload.grid);
+  }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows, floorPayload?.rooms]);
+
+  const corridorCells = useMemo(() => {
+    if (!floorPayload?.rooms.length) return [];
+    return listCorridorCells(floorPayload.rooms, floorPayload.grid);
+  }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows, floorPayload?.rooms]);
 
   /** Tight slab around the floor plate so the map is not a small island inside a viewport-sized void. */
   const slabSize = useMemo(
@@ -269,10 +284,10 @@ export function WardenBlueprintPage() {
             maxScale={MAX_SCALE}
             centerOnInit={false}
             limitToBounds={false}
-            smooth={false}
+            smooth
             doubleClick={{ disabled: true }}
-            wheel={{ step: 0.028, touchPadDisabled: false }}
-            panning={{ velocityDisabled: true, excluded: ["room-card"] }}
+            wheel={{ step: 0.02, touchPadDisabled: false }}
+            panning={{ velocityDisabled: false, excluded: ["room-card"] }}
             pinch={{ step: 2.2, disabled: false, allowPanning: true, excluded: ["room-card"] }}
             zoomAnimation={{
               disabled: false,
@@ -307,9 +322,51 @@ export function WardenBlueprintPage() {
                       No rooms on this floor.
                     </div>
                   ) : !loading && hasRooms ? (
-                    rooms.map((r) => (
-                      <BlueprintRoomCard key={r.id} room={r} dimmed={false} onSelect={(id) => void openRoom(id)} />
-                    ))
+                    <>
+                      {corridorCells.map(({ gx, gy }) => {
+                        const c = corridorCellRect(gx, gy);
+                        return (
+                          <div
+                            key={`corridor-${gx}-${gy}`}
+                            className="pointer-events-none absolute rounded-[2px] border border-sky-500/[0.07] bg-[length:10px_10px] opacity-[0.92]"
+                            style={{
+                              left: c.left,
+                              top: c.top,
+                              width: c.width,
+                              height: c.height,
+                              backgroundColor: "rgba(15, 23, 42, 0.42)",
+                              backgroundImage: `
+                                linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+                                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                                repeating-linear-gradient(
+                                  -18deg,
+                                  transparent,
+                                  transparent 5px,
+                                  rgba(100, 116, 139, 0.07) 5px,
+                                  rgba(100, 116, 139, 0.07) 6px
+                                )
+                              `,
+                            }}
+                            aria-hidden
+                          />
+                        );
+                      })}
+                      {buildingOutline ? (
+                        <div
+                          className="pointer-events-none absolute rounded-[3px] border-2 border-slate-400/35 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.5)]"
+                          style={{
+                            left: buildingOutline.left,
+                            top: buildingOutline.top,
+                            width: buildingOutline.width,
+                            height: buildingOutline.height,
+                          }}
+                          aria-hidden
+                        />
+                      ) : null}
+                      {rooms.map((r) => (
+                        <BlueprintRoomCard key={r.id} room={r} dimmed={false} onSelect={(id) => void openRoom(id)} />
+                      ))}
+                    </>
                   ) : null}
                 </div>
               </motion.div>

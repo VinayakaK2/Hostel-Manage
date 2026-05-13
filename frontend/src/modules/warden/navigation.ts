@@ -12,7 +12,6 @@ export const WARDEN_NAV: WardenNavItem[] = [
   { label: "Study Observations", to: "/warden/observations" },
   { label: "Leave Records", to: "/warden/leave-records" },
   { label: "Notifications", to: "/warden/notifications" },
-  { label: "Profile", to: "/warden/profile" },
 ];
 
 export function wardenTitleForPath(pathname: string): string {
@@ -22,6 +21,5 @@ export function wardenTitleForPath(pathname: string): string {
   if (pathname.startsWith("/warden/observations")) return "Study Observations";
   if (pathname.startsWith("/warden/leave-records")) return "Leave Records";
   if (pathname.startsWith("/warden/notifications")) return "Notifications";
-  if (pathname.startsWith("/warden/profile")) return "Profile";
   return "Operational Dashboard";
 }

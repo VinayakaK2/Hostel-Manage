@@ -7,22 +7,22 @@ function utcDateOnly(d) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
-/** Grid: floor 1 = 4×2 wing (corridor rhythm along X); floor 2 = 3×2 wing. */
+/** Grid: double-loaded corridor — rooms on x=0 and x=2, empty x=1 reads as central passage. */
 const NEHRU_ROOMS = [
   { num: "101", floor: 1, x: 0, y: 0, capacity: 4, status: "ACTIVE" },
-  { num: "102", floor: 1, x: 1, y: 0, capacity: 4, status: "ACTIVE" },
-  { num: "103", floor: 1, x: 2, y: 0, capacity: 2, status: "ACTIVE" },
-  { num: "104", floor: 1, x: 3, y: 0, capacity: 4, status: "ACTIVE" },
-  { num: "105", floor: 1, x: 0, y: 1, capacity: 3, status: "ACTIVE" },
-  { num: "106", floor: 1, x: 1, y: 1, capacity: 4, status: "ACTIVE" },
-  { num: "107", floor: 1, x: 2, y: 1, capacity: 4, status: "MAINTENANCE" },
-  { num: "108", floor: 1, x: 3, y: 1, capacity: 2, status: "INACTIVE" },
+  { num: "102", floor: 1, x: 0, y: 1, capacity: 4, status: "ACTIVE" },
+  { num: "103", floor: 1, x: 0, y: 2, capacity: 2, status: "ACTIVE" },
+  { num: "104", floor: 1, x: 0, y: 3, capacity: 4, status: "ACTIVE" },
+  { num: "105", floor: 1, x: 2, y: 0, capacity: 3, status: "ACTIVE" },
+  { num: "106", floor: 1, x: 2, y: 1, capacity: 4, status: "ACTIVE" },
+  { num: "107", floor: 1, x: 2, y: 2, capacity: 4, status: "MAINTENANCE" },
+  { num: "108", floor: 1, x: 2, y: 3, capacity: 2, status: "INACTIVE" },
   { num: "201", floor: 2, x: 0, y: 0, capacity: 4, status: "ACTIVE" },
-  { num: "202", floor: 2, x: 1, y: 0, capacity: 4, status: "ACTIVE" },
-  { num: "203", floor: 2, x: 2, y: 0, capacity: 3, status: "ACTIVE" },
-  { num: "204", floor: 2, x: 0, y: 1, capacity: 2, status: "ACTIVE" },
-  { num: "205", floor: 2, x: 1, y: 1, capacity: 3, status: "ACTIVE" },
-  { num: "206", floor: 2, x: 2, y: 1, capacity: 4, status: "ACTIVE" },
+  { num: "202", floor: 2, x: 0, y: 1, capacity: 4, status: "ACTIVE" },
+  { num: "203", floor: 2, x: 0, y: 2, capacity: 3, status: "ACTIVE" },
+  { num: "204", floor: 2, x: 2, y: 0, capacity: 2, status: "ACTIVE" },
+  { num: "205", floor: 2, x: 2, y: 1, capacity: 3, status: "ACTIVE" },
+  { num: "206", floor: 2, x: 2, y: 2, capacity: 4, status: "ACTIVE" },
 ];
 
 /** @type {Array<{ student_id: string; name: string; course: string; phone: string | null; parent_contact: string; roomNum: string; attendance: import("@prisma/client").AttendanceStatus }>} */

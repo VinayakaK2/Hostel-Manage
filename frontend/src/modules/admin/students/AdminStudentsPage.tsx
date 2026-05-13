@@ -37,6 +37,193 @@ const studentFormSchema = z.object({
 type StudentFormValues = z.infer<typeof studentFormSchema>;
 const studentFormResolver = zodResolver(studentFormSchema) as Resolver<StudentFormValues>;
 
+function AdminGlobalAddStudentModal({
+  open,
+  onClose,
+  cohort,
+  classYear,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  cohort: null | "MALE" | "FEMALE";
+  classYear: null | 11 | 12;
+  onCreated: () => void;
+}) {
+  const [hostels, setHostels] = useState<{ id: string; label: string }[]>([]);
+  const [roomsForAdd, setRoomsForAdd] = useState<{ id: string; label: string }[]>([]);
+  const form = useForm<StudentFormValues>({
+    resolver: studentFormResolver,
+    defaultValues: {
+      student_id: "",
+      name: "",
+      gender: "MALE",
+      class_year: 11,
+      course: "",
+      phone: "",
+      parent_contact: "",
+      hostel_id: "",
+      room_id: "",
+      status: "ACTIVE",
+    },
+  });
+
+  const genderWatch = form.watch("gender");
+  const hostelWatch = form.watch("hostel_id");
+
+  useEffect(() => {
+    if (!open) return;
+    form.reset({
+      student_id: "",
+      name: "",
+      gender: cohort ?? "MALE",
+      class_year: classYear ?? 11,
+      course: "",
+      phone: "",
+      parent_contact: "",
+      hostel_id: "",
+      room_id: "",
+      status: "ACTIVE",
+    });
+  }, [open, cohort, classYear, form]);
+
+  useEffect(() => {
+    if (!open) return;
+    const g = cohort ?? genderWatch;
+    const ac = new AbortController();
+    void listHostels({ page: 1, limit: 100, status: "ACTIVE" }, ac.signal)
+      .then((h) => {
+        const filtered = h.items.filter((x) => (g === "MALE" ? x.type === "BOYS" : x.type === "GIRLS"));
+        const opts = filtered.map((x) => ({ id: x.id, label: x.name }));
+        setHostels(opts);
+        const cur = form.getValues("hostel_id");
+        if (!cur && opts[0]) form.setValue("hostel_id", opts[0].id);
+        else if (cur && !opts.some((o) => o.id === cur)) form.setValue("hostel_id", opts[0]?.id ?? "");
+      })
+      .catch(() => setHostels([]));
+    return () => ac.abort();
+  }, [open, cohort, genderWatch, form]);
+
+  useEffect(() => {
+    if (!open || !hostelWatch) {
+      setRoomsForAdd([]);
+      return;
+    }
+    const ac = new AbortController();
+    void fetchHostelRooms(hostelWatch, ac.signal)
+      .then((r) => {
+        setRoomsForAdd(
+          r.items
+            .filter((room) => room.status === "ACTIVE" && room.current_occupancy < room.capacity)
+            .map((room) => ({
+              id: room.id,
+              label: `${room.room_number} · ${room.current_occupancy}/${room.capacity}`,
+            })),
+        );
+      })
+      .catch(() => setRoomsForAdd([]));
+    return () => ac.abort();
+  }, [open, hostelWatch]);
+
+  return (
+    <AppModal
+      open={open}
+      title="Add student"
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={form.handleSubmit(async (values) => {
+              const body = {
+                ...values,
+                phone: values.phone || undefined,
+                room_id: values.room_id || undefined,
+              };
+              await createStudent(body);
+              onCreated();
+              onClose();
+            })}
+          >
+            Save
+          </Button>
+        </>
+      }
+    >
+      <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+        {cohort == null ? (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-slate-700">Gender / cohort</label>
+            <select className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("gender")}>
+              <option value="MALE">Boys (male)</option>
+              <option value="FEMALE">Girls (female)</option>
+            </select>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-slate-700">
+              Cohort: <span className="font-semibold text-slate-900">{cohort === "MALE" ? "Boys" : "Girls"}</span>
+            </p>
+            <input type="hidden" {...form.register("gender")} />
+          </>
+        )}
+        {classYear == null ? (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-slate-700">Class</label>
+            <select
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm"
+              {...form.register("class_year", { valueAsNumber: true })}
+            >
+              <option value={11}>Class 11</option>
+              <option value={12}>Class 12</option>
+            </select>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-slate-700">
+              Class <span className="font-semibold text-slate-900">{classYear}</span>
+            </p>
+            <input type="hidden" {...form.register("class_year", { valueAsNumber: true })} />
+          </>
+        )}
+        <TextField label="Student ID" {...form.register("student_id")} error={form.formState.errors.student_id?.message} />
+        <TextField label="Full name" {...form.register("name")} error={form.formState.errors.name?.message} />
+        <TextField label="Course" {...form.register("course")} error={form.formState.errors.course?.message} />
+        <TextField label="Phone (optional)" {...form.register("phone")} error={form.formState.errors.phone?.message} />
+        <TextField
+          label="Parent contact"
+          {...form.register("parent_contact")}
+          error={form.formState.errors.parent_contact?.message}
+        />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700">Hostel</label>
+          <select className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("hostel_id")}>
+            <option value="">Select hostel</option>
+            {hostels.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-slate-700">Room (optional)</label>
+          <select className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("room_id")}>
+            <option value="">Unassigned</option>
+            {roomsForAdd.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </form>
+    </AppModal>
+  );
+}
+
 function StudentTable({
   rows,
   onView,
@@ -116,15 +303,15 @@ function StudentTable({
 function StudentSection({
   title,
   description,
-  genderForm,
   listGender,
   classYear,
+  listRefreshNonce,
 }: {
   title: string;
   description: string;
-  genderForm: "MALE" | "FEMALE";
   listGender: "BOYS" | "GIRLS";
   classYear: 11 | 12;
+  listRefreshNonce: number;
 }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -137,25 +324,9 @@ function StudentSection({
   const [view, setView] = useState<StudentRow | null>(null);
   const [edit, setEdit] = useState<StudentRow | null>(null);
   const [transfer, setTransfer] = useState<StudentRow | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
 
-  const [hostels, setHostels] = useState<{ id: string; label: string }[]>([]);
-  const [roomsForAdd, setRoomsForAdd] = useState<{ id: string; label: string }[]>([]);
   const [roomsForTransfer, setRoomsForTransfer] = useState<{ id: string; label: string }[]>([]);
   const [transferRoom, setTransferRoom] = useState("");
-
-  useEffect(() => {
-    const ac = new AbortController();
-    void listHostels({ page: 1, limit: 100, status: "ACTIVE" }, ac.signal)
-      .then((h) => {
-        const filtered = h.items.filter((x) =>
-          genderForm === "MALE" ? x.type === "BOYS" : x.type === "GIRLS",
-        );
-        setHostels(filtered.map((x) => ({ id: x.id, label: x.name })));
-      })
-      .catch(() => setHostels([]));
-    return () => ac.abort();
-  }, [genderForm]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -182,65 +353,15 @@ function StudentSection({
       })
       .finally(() => setLoading(false));
     return () => ac.abort();
-  }, [listGender, classYear, page, search, reloadKey]);
+  }, [listGender, classYear, page, search, reloadKey, listRefreshNonce]);
 
-  const form = useForm<StudentFormValues>({
-    resolver: studentFormResolver,
-    defaultValues: {
-      student_id: "",
-      name: "",
-      gender: genderForm,
-      class_year: classYear,
-      course: "",
-      phone: "",
-      parent_contact: "",
-      hostel_id: "",
-      room_id: "",
-      status: "ACTIVE",
-    },
-  });
+  useEffect(() => {
+    setPage(1);
+  }, [listRefreshNonce]);
 
   const editForm = useForm<StudentFormValues>({
     resolver: studentFormResolver,
   });
-
-  useEffect(() => {
-    if (!addOpen) return;
-    form.reset({
-      student_id: "",
-      name: "",
-      gender: genderForm,
-      class_year: classYear,
-      course: "",
-      phone: "",
-      parent_contact: "",
-      hostel_id: hostels[0]?.id ?? "",
-      room_id: "",
-      status: "ACTIVE",
-    });
-  }, [addOpen, genderForm, classYear, hostels, form]);
-
-  const hostelIdWatch = form.watch("hostel_id");
-  useEffect(() => {
-    if (!hostelIdWatch) {
-      setRoomsForAdd([]);
-      return;
-    }
-    const ac = new AbortController();
-    void fetchHostelRooms(hostelIdWatch, ac.signal)
-      .then((r) => {
-        setRoomsForAdd(
-          r.items
-            .filter((room) => room.status === "ACTIVE" && room.current_occupancy < room.capacity)
-            .map((room) => ({
-              id: room.id,
-              label: `${room.room_number} · ${room.current_occupancy}/${room.capacity}`,
-            })),
-        );
-      })
-      .catch(() => setRoomsForAdd([]));
-    return () => ac.abort();
-  }, [hostelIdWatch]);
 
   useEffect(() => {
     if (!transfer) {
@@ -273,21 +394,16 @@ function StudentSection({
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <p className="text-sm text-slate-600">{description}</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm sm:w-64"
-            placeholder="Search name, ID, course…"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-            aria-label={`Search ${title}`}
-          />
-          <Button type="button" onClick={() => setAddOpen(true)}>
-            Add Student
-          </Button>
-        </div>
+        <input
+          className="w-full max-w-md rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm sm:w-64"
+          placeholder="Search name, ID, course…"
+          value={search}
+          onChange={(e) => {
+            setPage(1);
+            setSearch(e.target.value);
+          }}
+          aria-label={`Search ${title}`}
+        />
       </div>
 
       <AsyncState
@@ -390,73 +506,6 @@ function StudentSection({
             </div>
           </dl>
         ) : null}
-      </AppModal>
-
-      <AppModal
-        open={addOpen}
-        title="Add student"
-        onClose={() => setAddOpen(false)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={form.handleSubmit(async (values) => {
-                const body = {
-                  ...values,
-                  phone: values.phone || undefined,
-                  room_id: values.room_id || undefined,
-                };
-                await createStudent(body);
-                setAddOpen(false);
-                setPage(1);
-                bump();
-              })}
-            >
-              Save
-            </Button>
-          </>
-        }
-      >
-        <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
-          <TextField label="Student ID" {...form.register("student_id")} error={form.formState.errors.student_id?.message} />
-          <TextField label="Full name" {...form.register("name")} error={form.formState.errors.name?.message} />
-          <input type="hidden" {...form.register("class_year", { valueAsNumber: true })} />
-          <p className="text-sm text-slate-700">
-            <span className="font-medium text-slate-900">Class {classYear}</span>
-            <span className="text-slate-500"> — new students in this list are assigned to this class.</span>
-          </p>
-          <TextField label="Course" {...form.register("course")} error={form.formState.errors.course?.message} />
-          <TextField label="Phone (optional)" {...form.register("phone")} error={form.formState.errors.phone?.message} />
-          <TextField
-            label="Parent contact"
-            {...form.register("parent_contact")}
-            error={form.formState.errors.parent_contact?.message}
-          />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Hostel</label>
-            <select className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("hostel_id")}>
-              <option value="">Select hostel</option>
-              {hostels.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-700">Room (optional)</label>
-            <select className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("room_id")}>
-              <option value="">Unassigned</option>
-              {roomsForAdd.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </form>
       </AppModal>
 
       <AppModal
@@ -577,6 +626,8 @@ function StudentSection({
 export function AdminStudentsPage() {
   const [cohort, setCohort] = useState<null | "MALE" | "FEMALE">(null);
   const [classYear, setClassYear] = useState<null | 11 | 12>(null);
+  const [globalAddOpen, setGlobalAddOpen] = useState(false);
+  const [listRefreshNonce, setListRefreshNonce] = useState(0);
 
   const pill =
     "inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2";
@@ -585,18 +636,30 @@ export function AdminStudentsPage() {
 
   return (
     <div className="erp-page-wide">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Directory</p>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-          Student management
-        </h2>
-        <p className="mt-1 max-w-3xl text-sm text-slate-600">
-          Choose boys or girls, then a class. Lists load from the server with the matching cohort and class only.
-        </p>
+      <AdminGlobalAddStudentModal
+        open={globalAddOpen}
+        onClose={() => setGlobalAddOpen(false)}
+        cohort={cohort}
+        classYear={classYear}
+        onCreated={() => setListRefreshNonce((n) => n + 1)}
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">Directory</p>
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">Student roster</h2>
+          <p className="mt-1 max-w-3xl text-sm text-slate-600">
+            Choose boys or girls, then a class. Lists load from the server for that cohort and class. You can add a
+            student anytime — pick cohort and class in the form if you are not on a class list yet.
+          </p>
+        </div>
+        <Button type="button" onClick={() => setGlobalAddOpen(true)}>
+          Add student
+        </Button>
       </div>
 
       {cohort === null ? (
-        <div className="erp-panel-grid">
+        <div className="erp-panel-grid mt-2">
           <button
             type="button"
             onClick={() => setCohort("MALE")}
@@ -631,7 +694,7 @@ export function AdminStudentsPage() {
           </button>
         </div>
       ) : classYear === null ? (
-        <div className="space-y-5">
+        <div className="space-y-5 mt-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
@@ -645,24 +708,46 @@ export function AdminStudentsPage() {
             </Button>
           </div>
           <p className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-900">{cohort === "MALE" ? "Boys" : "Girls"}</span> — pick a
-            class to load students.
+            <span className="font-semibold text-slate-900">{cohort === "MALE" ? "Boys" : "Girls"}</span> — choose a
+            class to view and manage students.
           </p>
-          <div
-            className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
-            role="tablist"
-            aria-label="Class"
-          >
-            <button type="button" className={`${pill} ${pillOff}`} onClick={() => setClassYear(11)}>
-              Class 11
+          <div className="erp-panel-grid">
+            <button
+              type="button"
+              onClick={() => setClassYear(11)}
+              className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-brand-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-800 ring-1 ring-brand-200">
+                11
+              </span>
+              <span>
+                <span className="block text-lg font-semibold text-slate-900">Class 11</span>
+                <span className="mt-1 block text-sm text-slate-600">
+                  Students in 11th grade — tap to view and manage.
+                </span>
+              </span>
+              <span className="text-sm font-semibold text-brand-700 group-hover:underline">Continue →</span>
             </button>
-            <button type="button" className={`${pill} ${pillOff}`} onClick={() => setClassYear(12)}>
-              Class 12
+            <button
+              type="button"
+              onClick={() => setClassYear(12)}
+              className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-rose-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-lg font-bold text-rose-800 ring-1 ring-rose-100">
+                12
+              </span>
+              <span>
+                <span className="block text-lg font-semibold text-slate-900">Class 12</span>
+                <span className="mt-1 block text-sm text-slate-600">
+                  Students in 12th grade — tap to view and manage.
+                </span>
+              </span>
+              <span className="text-sm font-semibold text-rose-700 group-hover:underline">Continue →</span>
             </button>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-2">
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="secondary" onClick={() => setClassYear(null)}>
               ← Class
@@ -706,17 +791,17 @@ export function AdminStudentsPage() {
             <StudentSection
               title={`Boys — Class ${classYear}`}
               description="Male students in boys hostels for the selected class."
-              genderForm="MALE"
               listGender="BOYS"
               classYear={classYear}
+              listRefreshNonce={listRefreshNonce}
             />
           ) : (
             <StudentSection
               title={`Girls — Class ${classYear}`}
               description="Female students in girls hostels for the selected class."
-              genderForm="FEMALE"
               listGender="GIRLS"
               classYear={classYear}
+              listRefreshNonce={listRefreshNonce}
             />
           )}
         </div>

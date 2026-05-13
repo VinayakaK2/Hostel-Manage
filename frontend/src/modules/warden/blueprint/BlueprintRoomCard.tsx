@@ -1,5 +1,4 @@
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
 import type { BlueprintDisplayStatus } from "@/stores/wardenBlueprintStore";
 import type { BlueprintFloorRoom } from "@/modules/warden/blueprint/blueprintGeometry";
 import { roomPixelRect } from "@/modules/warden/blueprint/blueprintGeometry";
@@ -29,21 +28,18 @@ function BlueprintRoomCardInner({ room, dimmed, onSelect }: BlueprintRoomCardPro
   const locked = room.display_status === "LOCKED" || room.room_status === "INACTIVE";
 
   return (
-    <motion.button
+    <button
       type="button"
       data-room-card
-      className={`room-card absolute flex flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2 text-center shadow-md transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${tone} ${
+      className={`room-card absolute flex flex-col items-center justify-center gap-0.5 rounded-md border px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[box-shadow,filter] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${tone} ${
         locked
           ? "cursor-pointer opacity-95"
           : dimmed
             ? "pointer-events-none opacity-[0.28]"
-            : "cursor-pointer hover:shadow-[0_0_0_1px_rgba(56,189,248,0.35),0_12px_40px_-18px_rgba(15,23,42,0.9)]"
+            : "cursor-pointer hover:brightness-[1.04] hover:shadow-[inset_0_0_0_1px_rgba(56,189,248,0.28)]"
       }`}
       style={{ left, top, width, height }}
       aria-label={`Room ${room.room_number}, ${room.occupancy} of ${room.capacity} occupied`}
-      whileHover={dimmed ? undefined : { scale: 1.012 }}
-      whileTap={dimmed ? undefined : { scale: 0.992 }}
-      transition={{ type: "spring", stiffness: 380, damping: 28 }}
       onClick={() => {
         if (!dimmed) onSelect(room.id);
       }}
@@ -54,7 +50,7 @@ function BlueprintRoomCardInner({ room, dimmed, onSelect }: BlueprintRoomCardPro
       <span className="select-none font-mono text-[clamp(0.7rem,1.8vw,0.95rem)] font-medium tabular-nums opacity-80">
         {room.occupancy} / {room.capacity}
       </span>
-    </motion.button>
+    </button>
   );
 }
 
