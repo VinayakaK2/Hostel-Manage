@@ -42,7 +42,16 @@ export function buildWhere(query, hostelId) {
   const where = { hostel_id: hostelId };
   if (query.gender) where.gender = query.gender;
   if (query.class !== undefined) where.class_year = query.class;
-  if (query.status) where.status = query.status;
+  if (query.status) {
+    where.status = query.status;
+  } else if (query.room_assignment === "unassigned") {
+    where.status = { in: ["ACTIVE", "ON_LEAVE"] };
+  }
+  if (query.room_assignment === "unassigned") {
+    where.room_id = null;
+  } else if (query.room_assignment === "assigned") {
+    where.room_id = { not: null };
+  }
   if (query.search) {
     where.OR = [
       { name: { contains: query.search, mode: "insensitive" } },
@@ -307,6 +316,10 @@ export async function transferStudentRoom(studentId, nextRoomId, hostelId, warde
     if (student.room_id === nextRoomId) {
       throw new HttpError(400, "Student is already in this room");
     }
+
+    const hostel = await tx.hostel.findUnique({ where: { id: hostelId } });
+    if (!hostel || hostel.status !== "ACTIVE") throw new HttpError(400, "Invalid hostel");
+    assertHostelGender(hostel, student.gender);
 
     const nextRoom = await tx.room.findFirst({
       where: { id: nextRoomId, hostel_id: hostelId },

@@ -11,10 +11,9 @@ import {
 } from "@/modules/admin/components/icons";
 
 export function WardenTopbar() {
-  const location = useLocation();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
-  const title = useMemo(() => wardenTitleForPath(location.pathname), [location.pathname]);
-  const isBlueprint = location.pathname.startsWith("/warden/blueprint");
+  const title = useMemo(() => wardenTitleForPath(pathname), [pathname]);
   const { user, logout, wardenHostel } = useAuth();
   const toggleSidebar = useWardenLayoutStore((s) => s.toggleSidebar);
   const collapsed = useWardenLayoutStore((s) => s.sidebarCollapsed);
@@ -67,27 +66,25 @@ export function WardenTopbar() {
           </h1>
         </div>
 
-        {!isBlueprint ? (
-          <div className="order-last flex w-full min-w-0 flex-1 basis-full items-center md:order-none md:basis-0">
-            <label className="relative w-full">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <IconSearch className="h-4 w-4" />
-              </span>
-              <input
-                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-                placeholder="Search students by name or ID…"
-                aria-label="Search students"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && q.trim()) {
-                    navigate(`/warden/students?search=${encodeURIComponent(q.trim())}`);
-                  }
-                }}
-              />
-            </label>
-          </div>
-        ) : null}
+        <div className="order-last flex w-full min-w-0 flex-1 basis-full items-center md:order-none md:basis-0">
+          <label className="relative w-full">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <IconSearch className="h-4 w-4" />
+            </span>
+            <input
+              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              placeholder="Search students by name or ID…"
+              aria-label="Search students"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && q.trim()) {
+                  navigate(`/warden/students?search=${encodeURIComponent(q.trim())}`);
+                }
+              }}
+            />
+          </label>
+        </div>
 
         <Link
           to="/warden/notifications"
@@ -110,9 +107,7 @@ export function WardenTopbar() {
             </span>
             <span className="hidden min-w-0 sm:block">
               <span className="block truncate">{user?.name ?? "Warden"}</span>
-              <span className="block truncate text-xs font-medium text-slate-500">
-                {user?.email ?? ""}
-              </span>
+              <span className="block truncate text-xs font-medium text-slate-500">{user?.email ?? ""}</span>
             </span>
           </button>
 

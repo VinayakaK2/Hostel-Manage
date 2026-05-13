@@ -8,6 +8,8 @@ export const listWardenStudentsQuerySchema = z
     gender: z.enum(["MALE", "FEMALE"]).optional(),
     class: z.coerce.number().int().refine((n) => n === 11 || n === 12).optional(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).optional(),
+    /** When `unassigned`, only students with no room (assignable roster for blueprint). */
+    room_assignment: z.enum(["any", "unassigned", "assigned"]).default("any"),
     sort: z.enum(["name_asc", "name_desc", "created_desc", "created_asc"]).default("name_asc"),
   })
   .strict();

@@ -106,10 +106,7 @@ export function computeBlueprintCanvasSize(
   rows = Math.max(1, rows);
   const width = BLUEPRINT_PAD * 2 + cols * BLUEPRINT_GRID_CELL + Math.max(0, cols - 1) * BLUEPRINT_STRUCT_WALL;
   const height = BLUEPRINT_PAD * 2 + rows * BLUEPRINT_GRID_CELL + Math.max(0, rows - 1) * BLUEPRINT_STRUCT_WALL;
-  return {
-    width: Math.max(520, width),
-    height: Math.max(520, height),
-  };
+  return { width, height };
 }
 
 function gridDimensionsFromPayload(

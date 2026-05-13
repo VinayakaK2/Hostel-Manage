@@ -1,4 +1,8 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { WardenClientError } from "@/lib/api/wardenClient";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchWardenStudents, transferWardenStudentRoom } from "@/modules/warden/api/wardenApi";
 import type { BlueprintRoomDetail } from "@/stores/wardenBlueprintStore";
 
 function attendancePill(status: "PRESENT" | "ABSENT" | "LEAVE" | null) {
@@ -35,9 +39,145 @@ export interface RoomDetailDrawerProps {
   loading: boolean;
   detail: BlueprintRoomDetail | null;
   onClose: () => void;
+  /** Called after a student is successfully assigned to the open room (server-side transfer completed). */
+  onStudentAssignedToRoom?: (roomId: string) => void;
 }
 
-export function RoomDetailDrawer({ open, loading, detail, onClose }: RoomDetailDrawerProps) {
+type UnassignedRow = {
+  id: string;
+  student_id: string;
+  name: string;
+  gender: "MALE" | "FEMALE";
+  class_year: number;
+  course: string;
+  status: "ACTIVE" | "INACTIVE" | "ON_LEAVE";
+};
+
+export function RoomDetailDrawer({
+  open,
+  loading,
+  detail,
+  onClose,
+  onStudentAssignedToRoom,
+}: RoomDetailDrawerProps) {
+  const { wardenHostel } = useAuth();
+
+  const [assignSearch, setAssignSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignRows, setAssignRows] = useState<UnassignedRow[]>([]);
+  const [assignTotal, setAssignTotal] = useState(0);
+  const [assignListError, setAssignListError] = useState<string | null>(null);
+  const [assignActionError, setAssignActionError] = useState<string | null>(null);
+  const [assignSuccess, setAssignSuccess] = useState<string | null>(null);
+  const [assigningStudentId, setAssigningStudentId] = useState<string | null>(null);
+  const [showAssignFlow, setShowAssignFlow] = useState(false);
+
+  const slotsRemaining = useMemo(() => {
+    if (!detail) return 0;
+    return Math.max(0, detail.room.capacity - detail.room.occupancy);
+  }, [detail]);
+
+  const canAssignStudents = useMemo(() => {
+    if (!detail) return false;
+    if (detail.room.room_status !== "ACTIVE") return false;
+    if (detail.room.display_status === "MAINTENANCE" || detail.room.display_status === "LOCKED") return false;
+    return slotsRemaining > 0;
+  }, [detail, slotsRemaining]);
+
+  const roomIdForAssign = detail?.room.id;
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(assignSearch.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [assignSearch]);
+
+  useEffect(() => {
+    if (!open) {
+      setAssignSearch("");
+      setDebouncedSearch("");
+      setAssignRows([]);
+      setAssignTotal(0);
+      setAssignListError(null);
+      setAssignActionError(null);
+      setAssignSuccess(null);
+      setAssigningStudentId(null);
+      setShowAssignFlow(false);
+    }
+  }, [open]);
+
+  const filterRowForHostel = useCallback(
+    (row: UnassignedRow): boolean => {
+      if (!wardenHostel) return true;
+      if (wardenHostel.type === "BOYS" && row.gender !== "MALE") return false;
+      if (wardenHostel.type === "GIRLS" && row.gender !== "FEMALE") return false;
+      return true;
+    },
+    [wardenHostel],
+  );
+
+  useEffect(() => {
+    if (!open || loading || !detail || !canAssignStudents || !roomIdForAssign || !showAssignFlow) {
+      return;
+    }
+
+    const ac = new AbortController();
+    setAssignLoading(true);
+    setAssignListError(null);
+
+    void (async () => {
+      try {
+        const payload = await fetchWardenStudents(
+          {
+            page: 1,
+            limit: 100,
+            room_assignment: "unassigned",
+            sort: "name_asc",
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          },
+          ac.signal,
+        );
+        if (ac.signal.aborted) return;
+        const rows = payload.items.filter(filterRowForHostel) as UnassignedRow[];
+        setAssignRows(rows);
+        setAssignTotal(payload.meta.total);
+      } catch (e) {
+        if (e instanceof WardenClientError && e.failure === "ABORTED") return;
+        setAssignRows([]);
+        setAssignTotal(0);
+        setAssignListError(e instanceof WardenClientError ? e.message : "Could not load unassigned students.");
+      } finally {
+        if (!ac.signal.aborted) setAssignLoading(false);
+      }
+    })();
+
+    return () => ac.abort();
+  }, [open, loading, detail, canAssignStudents, roomIdForAssign, showAssignFlow, debouncedSearch, filterRowForHostel]);
+
+  const handleAssign = useCallback(
+    async (studentId: string) => {
+      if (!detail?.room.id || assigningStudentId) return;
+      setAssignActionError(null);
+      setAssignSuccess(null);
+      setAssigningStudentId(studentId);
+      const ac = new AbortController();
+      try {
+        await transferWardenStudentRoom(studentId, detail.room.id, ac.signal);
+        setAssignSuccess("Student assigned to this room.");
+        onStudentAssignedToRoom?.(detail.room.id);
+        setAssignRows((prev) => prev.filter((r) => r.id !== studentId));
+        setAssignTotal((t) => Math.max(0, t - 1));
+        window.setTimeout(() => setAssignSuccess(null), 4000);
+      } catch (e) {
+        if (e instanceof WardenClientError && e.failure === "ABORTED") return;
+        setAssignActionError(e instanceof WardenClientError ? e.message : "Assignment failed. Try again.");
+      } finally {
+        setAssigningStudentId(null);
+      }
+    },
+    [assigningStudentId, detail?.room.id, onStudentAssignedToRoom],
+  );
+
   return (
     <AnimatePresence>
       {open ? (
@@ -164,6 +304,138 @@ export function RoomDetailDrawer({ open, loading, detail, onClose }: RoomDetailD
                       </ul>
                     )}
                   </div>
+
+                  {canAssignStudents && !showAssignFlow ? (
+                    <div className="rounded-2xl border border-brand-200/80 bg-brand-50/40 p-4 shadow-sm">
+                      <p className="mb-3 text-xs text-slate-600">
+                        {slotsRemaining} bed{slotsRemaining === 1 ? "" : "s"} free. Add a student who does not have a
+                        room yet.
+                      </p>
+                      <button
+                        type="button"
+                        className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
+                        onClick={() => setShowAssignFlow(true)}
+                      >
+                        Add student to this room
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {canAssignStudents && showAssignFlow ? (
+                    <div className="rounded-2xl border border-brand-200/80 bg-brand-50/40 p-4 shadow-sm">
+                      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">Add student to this room</h3>
+                          <p className="text-xs text-slate-600">
+                            Only students without a room are listed ({slotsRemaining} bed
+                            {slotsRemaining === 1 ? "" : "s"} free).
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          onClick={() => {
+                            setShowAssignFlow(false);
+                            setAssignSearch("");
+                            setDebouncedSearch("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Search
+                        <input
+                          type="search"
+                          value={assignSearch}
+                          onChange={(e) => setAssignSearch(e.target.value)}
+                          placeholder="Name, ID, course…"
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                          autoComplete="off"
+                        />
+                      </label>
+
+                      {assignSuccess ? (
+                        <p className="mb-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900">
+                          {assignSuccess}
+                        </p>
+                      ) : null}
+                      {assignActionError ? (
+                        <p className="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-900">
+                          {assignActionError}
+                        </p>
+                      ) : null}
+                      {assignListError ? (
+                        <p className="mb-2 text-sm font-medium text-rose-700">{assignListError}</p>
+                      ) : null}
+
+                      {assignLoading ? (
+                        <div className="space-y-2">
+                          <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                          <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                          <div className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                        </div>
+                      ) : assignRows.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-6 text-center text-sm text-slate-600">
+                          {debouncedSearch
+                            ? "No unassigned students match this search."
+                            : "No unassigned students are available for this hostel."}
+                        </p>
+                      ) : (
+                        <>
+                          {assignTotal > 100 ? (
+                            <p className="mb-2 text-xs font-medium text-amber-800">
+                              Showing up to 100 unassigned students. Refine search or use Student Management for full
+                              roster.
+                            </p>
+                          ) : null}
+                          <ul className="max-h-[min(40vh,320px)] space-y-2 overflow-y-auto pr-1">
+                            {assignRows.map((s) => (
+                              <li
+                                key={s.id}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate font-semibold text-slate-900">{s.name}</p>
+                                  <p className="truncate text-xs text-slate-600">
+                                    <span className="font-semibold">{s.student_id}</span> · {s.course} · Class{" "}
+                                    {s.class_year}
+                                  </p>
+                                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                                    {s.gender === "MALE" ? "Male" : "Female"}
+                                    {s.status === "ON_LEAVE" ? (
+                                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-900">
+                                        On leave
+                                      </span>
+                                    ) : null}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={!!assigningStudentId || slotsRemaining <= 0}
+                                  className="shrink-0 rounded-lg bg-brand-600 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                  onClick={() => void handleAssign(s.id)}
+                                >
+                                  {assigningStudentId === s.id ? "…" : "Assign"}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {!canAssignStudents && detail.room.room_status !== "ACTIVE" ? (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                      This room is not active, so new assignments are disabled.
+                    </p>
+                  ) : !canAssignStudents && slotsRemaining <= 0 ? (
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                      Room is at capacity. Assignments are disabled.
+                    </p>
+                  ) : null}
                 </div>
               )}
             </div>
