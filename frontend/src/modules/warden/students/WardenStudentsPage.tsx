@@ -192,74 +192,117 @@ export function WardenStudentsPage() {
         </Button>
       </div>
 
-      <div
-        className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
-        role="tablist"
-        aria-label="Class"
-      >
-        <button
-          type="button"
-          className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
-            selectedClass === 11
-              ? "border-brand-600 bg-brand-600 text-white shadow-sm"
-              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-          }`}
-          onClick={() => updateQuery({ class: "11", page: "1" })}
-        >
-          Class 11
-        </button>
-        <button
-          type="button"
-          className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
-            selectedClass === 12
-              ? "border-brand-600 bg-brand-600 text-white shadow-sm"
-              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-          }`}
-          onClick={() => updateQuery({ class: "12", page: "1" })}
-        >
-          Class 12
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <TextField
-          label="Search"
-          value={params.get("search") ?? ""}
-          onChange={(e) => updateQuery({ search: e.target.value, page: "1" })}
-        />
-        <label className="text-sm font-medium text-slate-700">
-          <span className="mb-1 block">Status</span>
-          <select
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            value={status}
-            onChange={(e) => updateQuery({ status: e.target.value, page: "1" })}
-          >
-            <option value="">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="ON_LEAVE">On leave</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
-        </label>
-        <label className="text-sm font-medium text-slate-700">
-          <span className="mb-1 block">Gender</span>
-          <select
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            value={gender}
-            onChange={(e) => updateQuery({ gender: e.target.value, page: "1" })}
-          >
-            <option value="">All</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-          </select>
-        </label>
-      </div>
-
       {selectedClass == null ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center text-sm text-slate-600">
-          Select <span className="font-semibold text-slate-900">Class 11</span> or{" "}
-          <span className="font-semibold text-slate-900">Class 12</span> to view and manage students.
+        <div className="erp-panel-grid mt-4">
+          <button
+            type="button"
+            onClick={() => updateQuery({ class: "11", page: "1" })}
+            className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-brand-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-800 ring-1 ring-brand-200">
+              11
+            </span>
+            <span>
+              <span className="block text-lg font-semibold text-slate-900">Class 11</span>
+              <span className="mt-1 block text-sm text-slate-600">
+                Students in 11th grade — tap to view and manage.
+              </span>
+            </span>
+            <span className="text-sm font-semibold text-brand-700 group-hover:underline">Continue →</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => updateQuery({ class: "12", page: "1" })}
+            className="group flex flex-col items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-card transition hover:border-rose-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-lg font-bold text-rose-800 ring-1 ring-rose-100">
+              12
+            </span>
+            <span>
+              <span className="block text-lg font-semibold text-slate-900">Class 12</span>
+              <span className="mt-1 block text-sm text-slate-600">
+                Students in 12th grade — tap to view and manage.
+              </span>
+            </span>
+            <span className="text-sm font-semibold text-rose-700 group-hover:underline">Continue →</span>
+          </button>
         </div>
-      ) : null}
+      ) : (
+        <div className="space-y-4 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                updateQuery({ class: undefined, page: "1" });
+              }}
+            >
+              ← Classes
+            </Button>
+          </div>
+          <div
+            className="inline-flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5"
+            role="tablist"
+            aria-label="Class"
+          >
+            <button
+              type="button"
+              className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+                selectedClass === 11
+                  ? "border-brand-600 bg-brand-600 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+              onClick={() => updateQuery({ class: "11", page: "1" })}
+            >
+              Class 11
+            </button>
+            <button
+              type="button"
+              className={`inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full border px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
+                selectedClass === 12
+                  ? "border-brand-600 bg-brand-600 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+              onClick={() => updateQuery({ class: "12", page: "1" })}
+            >
+              Class 12
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <TextField
+              label="Search"
+              value={params.get("search") ?? ""}
+              onChange={(e) => updateQuery({ search: e.target.value, page: "1" })}
+            />
+            <label className="text-sm font-medium text-slate-700">
+              <span className="mb-1 block">Status</span>
+              <select
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                value={status}
+                onChange={(e) => updateQuery({ status: e.target.value, page: "1" })}
+              >
+                <option value="">All</option>
+                <option value="ACTIVE">Active</option>
+                <option value="ON_LEAVE">On leave</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium text-slate-700">
+              <span className="mb-1 block">Gender</span>
+              <select
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                value={gender}
+                onChange={(e) => updateQuery({ gender: e.target.value, page: "1" })}
+              >
+                <option value="">All</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
 
       <AsyncState
         loading={loading}

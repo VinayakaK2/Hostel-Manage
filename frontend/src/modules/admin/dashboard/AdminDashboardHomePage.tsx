@@ -164,7 +164,7 @@ export function AdminDashboardHomePage() {
             />
             <StatMetricCard
               title="Today attendance"
-              value={`${stats.todayPresentCount} Present`}
+              value={String(stats.todayPresentCount)}
               subtitle={`${stats.todayAttendancePct}% attendance today`}
               icon={<IconChart className="h-6 w-6" />}
             />

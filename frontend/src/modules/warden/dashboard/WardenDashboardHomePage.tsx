@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { WardenClientError } from "@/lib/api/wardenClient";
 import {
   fetchWardenDashboardActivity,
-  fetchWardenDashboardOperations,
   fetchWardenDashboardStats,
 } from "@/modules/warden/api/wardenApi";
 import { z } from "zod";
-import { wardenActivityItemSchema, wardenDashboardStatsSchema, wardenOperationsSchema } from "@/modules/warden/api/schemas";
+import { wardenActivityItemSchema, wardenDashboardStatsSchema } from "@/modules/warden/api/schemas";
 import { AsyncState } from "@/modules/admin/components/AsyncState";
 import { IconBuilding, IconShield, IconUsers } from "@/modules/admin/components/icons";
 import { StatMetricCard } from "@/modules/admin/components/StatMetricCard";
@@ -15,7 +14,6 @@ import { Button } from "@/components/ui/Button";
 
 type Stats = z.infer<typeof wardenDashboardStatsSchema>;
 type ActivityItem = z.infer<typeof wardenActivityItemSchema>;
-type Operations = z.infer<typeof wardenOperationsSchema>;
 
 export function WardenDashboardHomePage() {
   const navigate = useNavigate();
@@ -24,20 +22,17 @@ export function WardenDashboardHomePage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [operations, setOperations] = useState<Operations | null>(null);
 
   const load = useCallback(async (signal: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-      const [s, a, o] = await Promise.all([
+      const [s, a] = await Promise.all([
         fetchWardenDashboardStats(signal),
         fetchWardenDashboardActivity(signal),
-        fetchWardenDashboardOperations(signal),
       ]);
       setStats(s);
       setActivity(a);
-      setOperations(o);
     } catch (e) {
       if (e instanceof WardenClientError && e.failure === "ABORTED") return;
       setError(e instanceof WardenClientError ? e.message : "Unable to load dashboard.");
@@ -77,7 +72,6 @@ export function WardenDashboardHomePage() {
     }
   }, []);
 
-  const occ = operations?.occupancy_snapshot;
 
   return (
     <div className="erp-page">
@@ -172,129 +166,7 @@ export function WardenDashboardHomePage() {
         emptyTitle="No dashboard data"
         emptyDescription="Try refreshing. If the issue persists, contact the administrator."
       >
-        {operations ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-              <h3 className="text-sm font-semibold text-slate-900">Recent attendance activity</h3>
-              <p className="text-xs text-slate-600">Today&apos;s marks, newest first</p>
-              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-sm">
-                {operations.recent_attendance.length === 0 ? (
-                  <li className="text-slate-600">No attendance recorded yet today.</li>
-                ) : (
-                  operations.recent_attendance.map((row, i) => (
-                    <li
-                      key={`${row.student_code}-${row.at}-${i}`}
-                      className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
-                    >
-                      <span className="font-medium text-slate-900">
-                        {row.student_name}{" "}
-                        <span className="font-normal text-slate-500">· Class {row.class_year}</span>
-                      </span>
-                      <span className="text-xs font-semibold text-slate-600">
-                        {row.status}
-                        <span className="ml-2 font-normal text-slate-400">
-                          {new Date(row.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-              <h3 className="text-sm font-semibold text-slate-900">Recently added students</h3>
-              <p className="text-xs text-slate-600">Latest enrollments in your hostel</p>
-              <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto text-sm">
-                {operations.recent_students.length === 0 ? (
-                  <li className="text-slate-600">No students yet.</li>
-                ) : (
-                  operations.recent_students.map((s) => (
-                    <li
-                      key={s.student_id}
-                      className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
-                    >
-                      <span className="font-medium text-slate-900">{s.name}</span>
-                      <span className="text-xs text-slate-500">
-                        {s.student_id} · Class {s.class_year}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-              <h3 className="text-sm font-semibold text-slate-900">Leave today</h3>
-              <p className="text-xs text-slate-600">Students marked on leave for today&apos;s roll</p>
-              <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto text-sm">
-                {operations.leave_today.length === 0 ? (
-                  <li className="text-slate-600">No leave marks today.</li>
-                ) : (
-                  operations.leave_today.map((s) => (
-                    <li key={s.student_id} className="border-b border-slate-100 py-2 last:border-0">
-                      <span className="font-medium text-slate-900">{s.name}</span>
-                      <span className="ml-2 text-xs text-slate-500">
-                        {s.student_id} · Class {s.class_year}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-              <h3 className="text-sm font-semibold text-slate-900">Occupancy snapshot</h3>
-              <p className="text-xs text-slate-600">Beds and rooms at a glance</p>
-              {occ ? (
-                <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Rooms</dt>
-                    <dd className="text-lg font-semibold text-slate-900">{occ.room_count}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Beds filled</dt>
-                    <dd className="text-lg font-semibold text-slate-900">
-                      {occ.occupied_beds}/{occ.total_bed_capacity}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Empty rooms</dt>
-                    <dd className="text-lg font-semibold text-emerald-800">{occ.empty_rooms}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Full rooms</dt>
-                    <dd className="text-lg font-semibold text-rose-800">{occ.full_rooms}</dd>
-                  </div>
-                </dl>
-              ) : null}
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5 lg:col-span-2">
-              <h3 className="text-sm font-semibold text-slate-900">Notification activity</h3>
-              <p className="text-xs text-slate-600">Latest inbox items</p>
-              <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm">
-                {operations.notification_activity.length === 0 ? (
-                  <li className="text-slate-600">No notifications.</li>
-                ) : (
-                  operations.notification_activity.map((n) => (
-                    <li
-                      key={n.id}
-                      className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0"
-                    >
-                      <span className={`font-medium ${n.read ? "text-slate-600" : "text-slate-900"}`}>
-                        {n.title}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {n.category.replaceAll("_", " ")} · {new Date(n.created_at).toLocaleString()}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-          </div>
-        ) : null}
       </AsyncState>
 
       <div className="erp-main-aside">
