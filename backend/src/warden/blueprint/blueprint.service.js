@@ -52,6 +52,40 @@ function hasCollision(layouts) {
 }
 
 /**
+ * True when stored tiles fully pack their axis-aligned bounding box (no holes inside the box).
+ * Typical legacy "dashboard" grids (e.g. 2×4) — not a hostel corridor ring — so we re-layout.
+ * @param {{ x: number; y: number; width: number; height: number }[]} layouts
+ */
+function layoutFormsSolidFilledBlock(layouts) {
+  const cells = new Set();
+  let gxMin = Infinity;
+  let gxMax = -Infinity;
+  let gyMin = Infinity;
+  let gyMax = -Infinity;
+  for (const L of layouts) {
+    const w = Math.max(1, L.width);
+    const h = Math.max(1, L.height);
+    for (let dx = 0; dx < w; dx += 1) {
+      for (let dy = 0; dy < h; dy += 1) {
+        const x = L.x + dx;
+        const y = L.y + dy;
+        cells.add(`${x},${y}`);
+        gxMin = Math.min(gxMin, x);
+        gxMax = Math.max(gxMax, x);
+        gyMin = Math.min(gyMin, y);
+        gyMax = Math.max(gyMax, y);
+      }
+    }
+  }
+  if (cells.size === 0) return false;
+  const bboxW = gxMax - gxMin + 1;
+  const bboxH = gyMax - gyMin + 1;
+  const bboxArea = bboxW * bboxH;
+  if (bboxArea <= 1) return false;
+  return cells.size === bboxArea;
+}
+
+/**
  * @param {number} roomCount
  */
 function pickColumnCount(roomCount) {
@@ -75,19 +109,95 @@ function buildLayoutsFromDatabase(rooms) {
   }));
 }
 
+/** Fixed hostel floor plate: 4×8 grid, rooms only on the outer ring; centre (cols 2–3, rows 2–7) is void. */
+const PERIMETER_GRID_COLS = 4;
+const PERIMETER_GRID_ROWS = 8;
+
 /**
- * @param {import("@prisma/client").Room[]} roomsSorted
- * @param {number} cols
+ * All perimeter cell coordinates in stable fill order: top → left → right → bottom.
+ * @returns {{ x: number; y: number }[]}
  */
-function autoLayouts(roomsSorted, cols) {
-  const c = Math.max(1, cols);
-  return roomsSorted.map((r, i) => ({
-    id: r.id,
-    x: i % c,
-    y: Math.floor(i / c),
-    width: 1,
-    height: 1,
-  }));
+function perimeterRingSlots() {
+  const slots = [];
+  for (let x = 0; x < PERIMETER_GRID_COLS; x += 1) slots.push({ x, y: 0 });
+  for (let y = 1; y <= PERIMETER_GRID_ROWS - 2; y += 1) slots.push({ x: 0, y });
+  for (let y = 1; y <= PERIMETER_GRID_ROWS - 2; y += 1) slots.push({ x: PERIMETER_GRID_COLS - 1, y });
+  for (let x = 0; x < PERIMETER_GRID_COLS; x += 1) slots.push({ x, y: PERIMETER_GRID_ROWS - 1 });
+  return slots;
+}
+
+/**
+ * Map numeric room numbers to the classic 101–120 ring (top / left odds / right evens / bottom).
+ * @param {string} roomNumber
+ * @returns {{ x: number; y: number } | null}
+ */
+function inferPerimeterCellFromRoomNumber(roomNumber) {
+  const digits = String(roomNumber).replace(/\D/g, "");
+  if (!digits) return null;
+  const n = Number.parseInt(digits, 10);
+  if (!Number.isFinite(n)) return null;
+  if (n >= 101 && n <= 104) return { x: n - 101, y: 0 };
+  if (n >= 105 && n <= 115 && n % 2 === 1) return { x: 0, y: (n - 105) / 2 + 1 };
+  if (n >= 106 && n <= 116 && n % 2 === 0) return { x: 3, y: (n - 106) / 2 + 1 };
+  if (n >= 117 && n <= 120) return { x: n - 117, y: 7 };
+  return null;
+}
+
+/**
+ * Explicit rectangular ring: rooms only on top, left, right, bottom; large empty centre.
+ * @param {import("@prisma/client").Room[]} roomsSorted
+ * @returns {{ id: string; x: number; y: number; width: number; height: number }[]}
+ */
+function autoLayouts(roomsSorted) {
+  const n = roomsSorted.length;
+  if (n === 0) return [];
+  if (n === 1) {
+    return [{ id: roomsSorted[0].id, x: 0, y: 0, width: 1, height: 1 }];
+  }
+
+  const slotKey = (x, y) => `${x},${y}`;
+  const used = new Set();
+  /** @type {{ id: string; x: number; y: number; width: number; height: number }[]} */
+  const layouts = [];
+  /** @type {import("@prisma/client").Room[]} */
+  const pending = [];
+
+  for (const r of roomsSorted) {
+    const cell = inferPerimeterCellFromRoomNumber(r.room_number);
+    if (cell) {
+      const k = slotKey(cell.x, cell.y);
+      if (!used.has(k)) {
+        used.add(k);
+        layouts.push({ id: r.id, x: cell.x, y: cell.y, width: 1, height: 1 });
+        continue;
+      }
+    }
+    pending.push(r);
+  }
+
+  const freeSlots = perimeterRingSlots().filter((p) => !used.has(slotKey(p.x, p.y)));
+  pending.sort((a, b) => compareRoomNumber(a.room_number, b.room_number));
+  let placedFromPending = 0;
+  for (let i = 0; i < pending.length; i += 1) {
+    const slot = freeSlots[i];
+    if (!slot) break;
+    layouts.push({ id: pending[i].id, x: slot.x, y: slot.y, width: 1, height: 1 });
+    placedFromPending = i + 1;
+  }
+
+  let spillY = PERIMETER_GRID_ROWS;
+  let spillX = 0;
+  for (let i = placedFromPending; i < pending.length; i += 1) {
+    const r = pending[i];
+    layouts.push({ id: r.id, x: spillX, y: spillY, width: 1, height: 1 });
+    spillX += 1;
+    if (spillX >= PERIMETER_GRID_COLS) {
+      spillX = 0;
+      spillY += 1;
+    }
+  }
+
+  return layouts;
 }
 
 /**
@@ -106,14 +216,19 @@ function shouldUseAutoLayout(rooms) {
     return true;
   }
   if (hasCollision(layouts)) return true;
+  if (layoutFormsSolidFilledBlock(layouts)) return true;
   return false;
 }
 
 /**
  * @param {import("@prisma/client").Room[]} rooms
  * @param {{ x: number; y: number; width: number; height: number; id: string }[]} layouts
+ * @param {{ forcePerimeter?: boolean } | undefined} opts
  */
-function computeGridMetrics(rooms, layouts) {
+function computeGridMetrics(rooms, layouts, opts) {
+  if (opts?.forcePerimeter) {
+    return { columns: PERIMETER_GRID_COLS, rows: PERIMETER_GRID_ROWS };
+  }
   let maxX = 0;
   let maxY = 0;
   const byId = new Map(layouts.map((l) => [l.id, l]));
@@ -192,8 +307,11 @@ export async function getBlueprintFloor(hostelId, floor) {
   const sorted = [...rooms].sort((a, b) => compareRoomNumber(a.room_number, b.room_number));
   const useAuto = shouldUseAutoLayout(sorted);
   const cols = pickColumnCount(sorted.length);
-  const layouts = useAuto ? autoLayouts(sorted, cols) : buildLayoutsFromDatabase(sorted);
-  const { columns, rows } = computeGridMetrics(sorted, layouts);
+  const layouts = useAuto ? autoLayouts(sorted) : buildLayoutsFromDatabase(sorted);
+  const ringCapacity = perimeterRingSlots().length;
+  const { columns, rows } = computeGridMetrics(sorted, layouts, {
+    forcePerimeter: useAuto && sorted.length > 1 && sorted.length <= ringCapacity,
+  });
   const layoutById = new Map(layouts.map((l) => [l.id, l]));
 
   const previewMap = await occupantPreviewByRoom(sorted.map((r) => r.id));

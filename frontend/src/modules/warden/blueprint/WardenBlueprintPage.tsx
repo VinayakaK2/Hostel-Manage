@@ -10,10 +10,13 @@ import {
 } from "@/modules/warden/api/wardenApi";
 import { BlueprintRoomCard } from "@/modules/warden/blueprint/BlueprintRoomCard";
 import {
+  BLUEPRINT_GRID_CELL,
+  BLUEPRINT_PAD,
+  BLUEPRINT_STRUCT_WALL,
+  blueprintInnerPlatePixels,
   buildingOutlineRect,
   computeBlueprintCanvasSize,
-  corridorCellRect,
-  listCorridorCells,
+  listCorridorMergedRects,
 } from "@/modules/warden/blueprint/blueprintGeometry";
 import { RoomDetailDrawer } from "@/modules/warden/blueprint/RoomDetailDrawer";
 import { useWardenBlueprintStore } from "@/stores/wardenBlueprintStore";
@@ -134,10 +137,17 @@ export function WardenBlueprintPage() {
     return buildingOutlineRect(floorPayload.rooms, floorPayload.grid);
   }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows, floorPayload?.rooms]);
 
-  const corridorCells = useMemo(() => {
+  const corridorRects = useMemo(() => {
     if (!floorPayload?.rooms.length) return [];
-    return listCorridorCells(floorPayload.rooms, floorPayload.grid);
+    return listCorridorMergedRects(floorPayload.rooms, floorPayload.grid);
   }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows, floorPayload?.rooms]);
+
+  const plateInnerPx = useMemo(() => {
+    if (!floorPayload?.grid) return null;
+    return blueprintInnerPlatePixels(floorPayload.grid.columns, floorPayload.grid.rows);
+  }, [floorPayload?.grid?.columns, floorPayload?.grid?.rows]);
+
+  const gridStride = BLUEPRINT_GRID_CELL + BLUEPRINT_STRUCT_WALL;
 
   /** Tight slab around the floor plate so the map is not a small island inside a viewport-sized void. */
   const slabSize = useMemo(
@@ -211,6 +221,35 @@ export function WardenBlueprintPage() {
           />
         ) : null}
 
+        {!loading && floorState === "loaded" && hasRooms ? (
+          <div
+            className="pointer-events-none absolute left-4 right-4 top-3 z-30 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-lg border border-slate-700/60 bg-slate-950/75 px-4 py-2 font-mono text-[11px] font-medium leading-snug text-slate-300 shadow-lg backdrop-blur-sm sm:left-8 sm:right-8 sm:mx-auto sm:max-w-3xl"
+            role="note"
+            aria-label="Room colour key"
+          >
+            <span className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]" />
+              <span>
+                <span className="text-emerald-300/95">Green</span> — room empty (0 occupants)
+              </span>
+            </span>
+            <span className="hidden h-3 w-px bg-slate-600 sm:inline" aria-hidden />
+            <span className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+              <span>
+                <span className="text-yellow-200/95">Yellow</span> — partially filled
+              </span>
+            </span>
+            <span className="hidden h-3 w-px bg-slate-600 sm:inline" aria-hidden />
+            <span className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-[0_0_10px_rgba(248,113,113,0.55)]" />
+              <span>
+                <span className="text-red-300/95">Red</span> — full (at capacity)
+              </span>
+            </span>
+          </div>
+        ) : null}
+
         <div className="pointer-events-none absolute bottom-6 right-5 z-30 flex flex-col items-stretch gap-2">
           <div className="pointer-events-auto flex flex-col gap-2 rounded-2xl border border-slate-600/50 bg-slate-950/90 p-2 shadow-2xl backdrop-blur-md">
             <label className="sr-only" htmlFor="warden-blueprint-floor">
@@ -238,7 +277,7 @@ export function WardenBlueprintPage() {
               type="button"
               title="Zoom in"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 text-lg font-bold text-white shadow-sm ring-1 ring-slate-600/60 transition hover:bg-slate-700 hover:ring-brand-500/50"
-              onClick={() => transformRef.current?.zoomIn(0.11, 320, "easeOutCubic")}
+              onClick={() => transformRef.current?.zoomIn(0.05, 320, "easeOutCubic")}
             >
               +
             </button>
@@ -246,7 +285,7 @@ export function WardenBlueprintPage() {
               type="button"
               title="Zoom out"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 text-lg font-bold text-white shadow-sm ring-1 ring-slate-600/60 transition hover:bg-slate-700 hover:ring-brand-500/50"
-              onClick={() => transformRef.current?.zoomOut(0.11, 320, "easeOutCubic")}
+              onClick={() => transformRef.current?.zoomOut(0.05, 320, "easeOutCubic")}
             >
               −
             </button>
@@ -286,13 +325,13 @@ export function WardenBlueprintPage() {
             limitToBounds={false}
             smooth
             doubleClick={{ disabled: true }}
-            wheel={{ step: 0.02, touchPadDisabled: false }}
+            wheel={{ step: 0.006, touchPadDisabled: false }}
             panning={{ velocityDisabled: false, excluded: ["room-card"] }}
-            pinch={{ step: 2.2, disabled: false, allowPanning: true, excluded: ["room-card"] }}
+            pinch={{ step: 0.55, disabled: false, allowPanning: true, excluded: ["room-card"] }}
             zoomAnimation={{
               disabled: false,
-              size: 0.32,
-              animationTime: 260,
+              size: 0.18,
+              animationTime: 220,
               animationType: "easeOutCubic",
             }}
           >
@@ -323,37 +362,52 @@ export function WardenBlueprintPage() {
                     </div>
                   ) : !loading && hasRooms ? (
                     <>
-                      {corridorCells.map(({ gx, gy }) => {
-                        const c = corridorCellRect(gx, gy);
-                        return (
-                          <div
-                            key={`corridor-${gx}-${gy}`}
-                            className="pointer-events-none absolute rounded-[2px] border border-sky-500/[0.07] bg-[length:10px_10px] opacity-[0.92]"
-                            style={{
-                              left: c.left,
-                              top: c.top,
-                              width: c.width,
-                              height: c.height,
-                              backgroundColor: "rgba(15, 23, 42, 0.42)",
-                              backgroundImage: `
-                                linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
-                                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-                                repeating-linear-gradient(
-                                  -18deg,
-                                  transparent,
-                                  transparent 5px,
-                                  rgba(100, 116, 139, 0.07) 5px,
-                                  rgba(100, 116, 139, 0.07) 6px
-                                )
-                              `,
-                            }}
-                            aria-hidden
-                          />
-                        );
-                      })}
+                      {plateInnerPx ? (
+                        <div
+                          className="pointer-events-none absolute z-[0]"
+                          style={{
+                            left: BLUEPRINT_PAD,
+                            top: BLUEPRINT_PAD,
+                            width: plateInnerPx.width,
+                            height: plateInnerPx.height,
+                            opacity: 0.42,
+                            backgroundImage: `
+                              linear-gradient(rgba(56, 189, 248, 0.09) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(56, 189, 248, 0.09) 1px, transparent 1px)
+                            `,
+                            backgroundSize: `${gridStride}px ${gridStride}px`,
+                          }}
+                          aria-hidden
+                        />
+                      ) : null}
+                      {corridorRects.map((c, idx) => (
+                        <div
+                          key={`corridor-${idx}-${c.left}-${c.top}`}
+                          className="pointer-events-none absolute z-[1] rounded-sm border border-sky-500/[0.08] bg-[length:12px_12px]"
+                          style={{
+                            left: c.left,
+                            top: c.top,
+                            width: c.width,
+                            height: c.height,
+                            backgroundColor: "rgba(12, 20, 35, 0.55)",
+                            backgroundImage: `
+                              linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                              linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+                              repeating-linear-gradient(
+                                -18deg,
+                                transparent,
+                                transparent 8px,
+                                rgba(71, 85, 105, 0.09) 8px,
+                                rgba(71, 85, 105, 0.09) 9px
+                              )
+                            `,
+                          }}
+                          aria-hidden
+                        />
+                      ))}
                       {buildingOutline ? (
                         <div
-                          className="pointer-events-none absolute rounded-[3px] border-2 border-slate-400/35 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.5)]"
+                          className="pointer-events-none absolute z-[2] rounded-[3px] border-2 border-slate-400/35 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.5)]"
                           style={{
                             left: buildingOutline.left,
                             top: buildingOutline.top,

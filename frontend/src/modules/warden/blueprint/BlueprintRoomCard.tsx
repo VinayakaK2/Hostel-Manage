@@ -3,17 +3,18 @@ import type { BlueprintDisplayStatus } from "@/stores/wardenBlueprintStore";
 import type { BlueprintFloorRoom } from "@/modules/warden/blueprint/blueprintGeometry";
 import { roomPixelRect } from "@/modules/warden/blueprint/blueprintGeometry";
 
-/** Minimal, blueprint-like room plate — state only via border/fill tone (no chips or badges). */
+/** Occupancy: empty = green, partial = yellow, full = red. */
 const STATUS_CLASS: Record<BlueprintDisplayStatus, string> = {
   EMPTY:
-    "border-emerald-800/45 bg-emerald-950/35 text-emerald-100/95 shadow-[inset_0_1px_0_rgba(167,243,208,0.08)]",
+    "border-emerald-500/50 bg-emerald-950/40 text-emerald-100/95 shadow-[inset_0_1px_0_rgba(167,243,208,0.06)] hover:shadow-[0_0_26px_rgba(52,211,153,0.28)]",
   PARTIAL:
-    "border-amber-700/40 bg-amber-950/30 text-amber-100/90 shadow-[inset_0_1px_0_rgba(251,191,36,0.1)]",
+    "border-yellow-500/45 bg-yellow-950/45 text-yellow-100/95 shadow-[inset_0_1px_0_rgba(253,224,71,0.08)] hover:shadow-[0_0_26px_rgba(234,179,8,0.28)]",
   FULL:
-    "border-rose-800/50 bg-rose-950/40 text-rose-100/95 shadow-[inset_0_1px_0_rgba(251,113,133,0.1)]",
+    "border-red-600/50 bg-red-950/55 text-red-100/95 shadow-[inset_0_1px_0_rgba(252,165,165,0.06)] hover:shadow-[0_0_26px_rgba(248,113,113,0.3)]",
   MAINTENANCE:
-    "border-red-950/70 bg-red-950/55 text-red-100/90 shadow-[inset_0_1px_0_rgba(127,29,29,0.35)]",
-  LOCKED: "border-slate-700/75 bg-slate-950/85 text-slate-400",
+    "border-orange-600/50 bg-orange-950/50 text-orange-100/90 hover:shadow-[0_0_22px_rgba(251,146,60,0.22)]",
+  LOCKED:
+    "border-slate-500/45 bg-slate-900/55 text-slate-300/90 hover:shadow-[0_0_20px_rgba(148,163,184,0.2)]",
 };
 
 export interface BlueprintRoomCardProps {
@@ -31,12 +32,12 @@ function BlueprintRoomCardInner({ room, dimmed, onSelect }: BlueprintRoomCardPro
     <button
       type="button"
       data-room-card
-      className={`room-card absolute flex flex-col items-center justify-center gap-0.5 rounded-md border px-2 py-1.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-[box-shadow,filter] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${tone} ${
+      className={`room-card absolute z-[3] flex flex-col items-center justify-center gap-1 rounded-none border px-1 py-1 text-center transition-[box-shadow,filter,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/75 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${tone} ${
         locked
           ? "cursor-pointer opacity-95"
           : dimmed
             ? "pointer-events-none opacity-[0.28]"
-            : "cursor-pointer hover:brightness-[1.04] hover:shadow-[inset_0_0_0_1px_rgba(56,189,248,0.28)]"
+            : "cursor-pointer hover:brightness-[1.06]"
       }`}
       style={{ left, top, width, height }}
       aria-label={`Room ${room.room_number}, ${room.occupancy} of ${room.capacity} occupied`}
@@ -44,10 +45,10 @@ function BlueprintRoomCardInner({ room, dimmed, onSelect }: BlueprintRoomCardPro
         if (!dimmed) onSelect(room.id);
       }}
     >
-      <span className="select-none font-mono text-[clamp(0.95rem,2.6vw,1.35rem)] font-semibold leading-none tracking-tight text-inherit">
+      <span className="select-none font-mono text-[clamp(1.05rem,2.8vmin,1.75rem)] font-semibold leading-none tracking-tight text-inherit">
         {room.room_number}
       </span>
-      <span className="select-none font-mono text-[clamp(0.7rem,1.8vw,0.95rem)] font-medium tabular-nums opacity-80">
+      <span className="select-none font-mono text-[clamp(0.78rem,2vmin,1.1rem)] font-medium tabular-nums leading-none text-inherit opacity-85">
         {room.occupancy} / {room.capacity}
       </span>
     </button>
