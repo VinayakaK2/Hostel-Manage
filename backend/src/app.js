@@ -9,11 +9,25 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
+// Parse the CORS_ORIGIN env var — supports comma-separated list of allowed origins
+// e.g. "https://hostel-manage-pi.vercel.app,https://hostel-manage-cp2w.vercel.app"
+const allowedOrigins = env.CORS_ORIGIN
+  ? env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
+
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    // Allow any origin that appears in the whitelist; reject all others
+    origin: (origin, callback) => {
+      // Allow server-to-server requests (no Origin header) and whitelisted origins
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin '${origin}' is not allowed`));
+      }
+    },
     credentials: true,
   }),
 );
