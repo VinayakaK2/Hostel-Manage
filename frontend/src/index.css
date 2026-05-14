@@ -10,14 +10,19 @@
     @apply outline-none ring-2 ring-offset-2 ring-offset-white;
     --tw-ring-color: theme("colors.brand.500");
   }
-  html {
+  html,
+  body,
+  #root {
     height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
   body {
-    @apply min-h-dvh bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
   }
   #root {
-    @apply flex min-h-dvh w-full flex-col;
+    @apply flex w-full flex-col;
   }
 }
 

@@ -10,7 +10,7 @@ export function WardenLayout() {
   const setMobileNavOpen = useWardenLayoutStore((s) => s.setMobileNavOpen);
 
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 w-full flex-col overflow-hidden bg-admin-gradient">
+    <div className="flex h-dvh max-h-dvh min-h-0 w-full flex-col bg-slate-50">
       {mobileNavOpen ? (
         <button
           type="button"
@@ -20,7 +20,7 @@ export function WardenLayout() {
         />
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1">
         <div
           className={`fixed inset-y-0 left-0 z-50 md:static md:z-0 ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
@@ -29,13 +29,13 @@ export function WardenLayout() {
           <WardenSidebar />
         </div>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {!isBlueprint ? <WardenTopbar /> : null}
           <main
             className={
               isBlueprint
                 ? "relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden p-0"
-                : "flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
+                : "min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
             }
           >
             <Outlet />

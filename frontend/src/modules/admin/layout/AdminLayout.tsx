@@ -8,7 +8,7 @@ export function AdminLayout() {
   const setMobileNavOpen = useAdminLayoutStore((s) => s.setMobileNavOpen);
 
   return (
-    <div className="min-h-dvh bg-admin-gradient">
+    <div className="flex h-dvh max-h-dvh overflow-hidden bg-admin-gradient">
       {mobileNavOpen ? (
         <button
           type="button"
@@ -18,7 +18,7 @@ export function AdminLayout() {
         />
       ) : null}
 
-      <div className="flex min-h-dvh w-full min-w-0">
+      <div className="flex min-h-0 w-full min-w-0 flex-1">
         <div
           className={`fixed inset-y-0 left-0 z-50 md:static md:z-0 ${
             mobileNavOpen ? "translate-x-0" : "-translate-x-full"
@@ -29,7 +29,7 @@ export function AdminLayout() {
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <AdminTopbar />
-          <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+          <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
             <Outlet />
           </main>
         </div>

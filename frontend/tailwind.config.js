@@ -32,13 +32,18 @@ export default {
       },
       boxShadow: {
         card:
-          "0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(30, 64, 175, 0.08)",
-        soft: "0 8px 30px rgba(15, 23, 42, 0.08)",
-        insetGlass: "inset 0 1px 0 rgba(255,255,255,0.55)",
+          "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 16px rgba(15, 23, 42, 0.04)",
+        soft: "0 8px 30px rgba(15, 23, 42, 0.06)",
+        insetGlass: "inset 0 1px 0 rgba(255,255,255,0.4)",
       },
       backgroundImage: {
         "admin-gradient":
-          "radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,0.22), transparent 55%), radial-gradient(900px 500px at 100% 0%, rgba(37,99,235,0.18), transparent 50%)",
+          "radial-gradient(1200px 600px at 10% -10%, rgba(59,130,246,0.15), transparent 55%), radial-gradient(900px 500px at 100% 0%, rgba(37,99,235,0.12), transparent 50%)",
+      },
+      keyframes: {
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
       },
     },
   },

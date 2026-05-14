@@ -29,11 +29,28 @@ import { IconChart, IconShield, IconUsers } from "@/modules/admin/components/ico
 import { StatMetricCard } from "@/modules/admin/components/StatMetricCard";
 import { useAdminDashboardFiltersStore } from "@/stores/adminDashboardFiltersStore";
 import { Button } from "@/components/ui/Button";
+import { motion } from "framer-motion";
 
 type Stats = z.infer<typeof dashboardStatsSchema>;
 type ActivityItem = z.infer<typeof activityItemSchema>;
 
 const PIE_COLORS = ["#2563eb", "#60a5fa", "#93c5fd", "#1e3a8a"];
+
+import type { Variants } from "framer-motion";
+
+// Animation variants
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+};
 
 export function AdminDashboardHomePage() {
   const navigate = useNavigate();
@@ -89,41 +106,46 @@ export function AdminDashboardHomePage() {
   }, [charts]);
 
   return (
-    <div className="erp-page">
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <motion.div 
+      initial="hidden" 
+      animate="show" 
+      variants={containerVariants} 
+      className="erp-page"
+    >
+      <motion.div variants={itemVariants} className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-800">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 mb-1">
             Overview
           </p>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
-            Command center
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Command Center
           </h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
+          <p className="mt-1 max-w-2xl text-sm text-slate-500">
             Live operational metrics across students, hostels, wardens, and attendance signals.
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <label className="text-xs font-semibold text-slate-600">
-            Charts from
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <label className="flex items-center text-xs font-medium text-slate-500">
+            From
             <input
               type="date"
-              className="ml-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm"
+              className="ml-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-colors"
               value={chartFrom}
               onChange={(e) => setChartRange(e.target.value, chartTo)}
             />
           </label>
-          <label className="text-xs font-semibold text-slate-600">
-            to
+          <label className="flex items-center text-xs font-medium text-slate-500">
+            To
             <input
               type="date"
-              className="ml-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm"
+              className="ml-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-colors"
               value={chartTo}
               onChange={(e) => setChartRange(chartFrom, e.target.value)}
             />
           </label>
         </div>
-      </div>
+      </motion.div>
 
       <AsyncState
         loading={loading}
@@ -135,12 +157,12 @@ export function AdminDashboardHomePage() {
         }}
       >
         {stats ? (
-          <div className="erp-metric-grid">
+          <motion.div variants={itemVariants} className="erp-metric-grid mt-4">
             <StatMetricCard
               title="Total Students"
               value={String(stats.totalStudents)}
               subtitle="Active + on leave"
-              icon={<IconUsers className="h-6 w-6" />}
+              icon={<IconUsers className="h-5 w-5" />}
               trendLabel="Stable enrollment"
               trendVariant="neutral"
             />
@@ -148,221 +170,263 @@ export function AdminDashboardHomePage() {
               title="Boys Students"
               value={String(stats.boysStudents)}
               subtitle="Across boys hostels"
-              icon={<IconUsers className="h-6 w-6" />}
+              icon={<IconUsers className="h-5 w-5" />}
             />
             <StatMetricCard
               title="Girls Students"
               value={String(stats.girlsStudents)}
               subtitle="Across girls hostels"
-              icon={<IconUsers className="h-6 w-6" />}
+              icon={<IconUsers className="h-5 w-5" />}
             />
             <StatMetricCard
               title="Active Wardens"
               value={String(stats.activeWardens)}
               subtitle="Operational staff"
-              icon={<IconShield className="h-6 w-6" />}
+              icon={<IconShield className="h-5 w-5" />}
             />
             <StatMetricCard
               title="Today attendance"
               value={String(stats.todayPresentCount)}
               subtitle={`${stats.todayAttendancePct}% attendance today`}
-              icon={<IconChart className="h-6 w-6" />}
+              icon={<IconChart className="h-5 w-5" />}
             />
             <StatMetricCard
               title="Students On Leave"
               value={String(stats.studentsOnLeave)}
               subtitle="Operational leave load"
-              icon={<IconUsers className="h-6 w-6" />}
+              icon={<IconUsers className="h-5 w-5" />}
             />
             <StatMetricCard
               title="Absent Students"
               value={String(stats.absentStudents)}
               subtitle="Today’s absent marks"
-              icon={<IconChart className="h-6 w-6" />}
+              icon={<IconChart className="h-5 w-5" />}
               trendVariant="down"
             />
-          </div>
+          </motion.div>
         ) : null}
 
-        <div className="erp-panel-grid">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Attendance trend</p>
-                <p className="text-xs text-slate-600">Present-rate by day</p>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+          <motion.div variants={containerVariants} className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Attendance Trend</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Present-rate by day</p>
+                </div>
               </div>
-            </div>
-            <div className="erp-chart-viewport">
+              <div className="erp-chart-viewport h-48">
               {charts && charts.attendanceTrend.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-600">
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
                   No attendance data in this range.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={charts?.attendanceTrend ?? []}>
+                  <AreaChart data={charts?.attendanceTrend ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="attFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#64748b" domain={[0, 100]} />
-                    <Tooltip />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 100]} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ color: '#0f172a', fontSize: '13px', fontWeight: 500 }}
+                    />
                     <Area
                       type="monotone"
                       dataKey="attendancePct"
-                      stroke="#1d4ed8"
+                      stroke="#3b82f6"
                       fill="url(#attFill)"
                       strokeWidth={2}
+                      activeDot={{ r: 6, strokeWidth: 0, fill: '#2563eb' }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </section>
+            </motion.section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Hostel occupancy</p>
-                <p className="text-xs text-slate-600">Occupancy % by hostel</p>
+            <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Hostel Occupancy</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Occupancy % by hostel</p>
+                </div>
               </div>
-            </div>
-            <div className="erp-chart-viewport">
+              <div className="erp-chart-viewport h-48">
               {charts && charts.occupancy.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-600">
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
                   No hostels available.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts?.occupancy ?? []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="hostelName" tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#64748b" domain={[0, 100]} />
-                    <Tooltip />
-                    <Bar dataKey="occupancyPct" fill="#2563eb" radius={[8, 8, 0, 0]} />
+                  <BarChart data={charts?.occupancy ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="hostelName" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={[0, 100]} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="occupancyPct" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </section>
+            </motion.section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Leave statistics</p>
-                <p className="text-xs text-slate-600">Leave marks by day</p>
+            <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Leave Statistics</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Leave marks by day</p>
+                </div>
               </div>
-            </div>
-            <div className="erp-chart-viewport">
+              <div className="erp-chart-viewport h-48">
               {charts && charts.leaveStatistics.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-600">
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
                   No leave marks in this range.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={charts?.leaveStatistics ?? []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="#64748b" />
-                    <Tooltip />
+                  <AreaChart data={charts?.leaveStatistics ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="leaveFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                    />
                     <Area
                       type="monotone"
                       dataKey="leaveCount"
-                      stroke="#1e40af"
-                      fill="#bfdbfe"
+                      stroke="#8b5cf6"
+                      fill="url(#leaveFill)"
                       strokeWidth={2}
+                      activeDot={{ r: 6, strokeWidth: 0, fill: '#7c3aed' }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </section>
+            </motion.section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Gender distribution</p>
-                <p className="text-xs text-slate-600">Active + on leave students</p>
+            <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Gender Distribution</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Active + on leave</p>
+                </div>
               </div>
-            </div>
-            <div className="erp-chart-viewport">
+              <div className="erp-chart-viewport h-48">
               {genderPie.every((x) => x.value === 0) ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-600">
+                <div className="flex h-full items-center justify-center text-sm text-slate-400">
                   No student records.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie dataKey="value" data={genderPie} innerRadius={55} outerRadius={90} paddingAngle={2}>
+                    <Pie 
+                      dataKey="value" 
+                      data={genderPie} 
+                      innerRadius={60} 
+                      outerRadius={85} 
+                      paddingAngle={5}
+                      stroke="none"
+                    >
                       {genderPie.map((_, idx) => (
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </section>
-        </div>
+            </motion.section>
+          </motion.div>
 
-        <div className="erp-main-aside">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <div className="flex items-center justify-between gap-3">
+          <motion.div variants={containerVariants} className="flex flex-col gap-4">
+            <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Recent activity</p>
-                <p className="text-xs text-slate-600">Latest admin and system events</p>
+                <p className="text-sm font-semibold text-slate-900">Recent Activity</p>
+                <p className="text-xs text-slate-500 mt-0.5">Latest system events</p>
               </div>
             </div>
-            <ul className="mt-4 divide-y divide-slate-100">
+            <ul className="mt-2 divide-y divide-slate-100/80">
               {activity.slice(0, 8).map((a) => (
-                <li key={a.id} className="flex items-start justify-between gap-3 py-3">
+                <li key={a.id} className="flex items-start justify-between gap-3 py-3.5 group">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{a.title}</p>
-                    <p className="mt-1 text-xs text-slate-600">{a.type}</p>
+                    <p className="text-sm font-medium text-slate-900 group-hover:text-brand-600 transition-colors">{a.title}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{a.type}</p>
                   </div>
-                  <p className="shrink-0 text-xs text-slate-500">
-                    {new Date(a.created_at).toLocaleString()}
+                  <p className="shrink-0 text-xs font-medium text-slate-400">
+                    {new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </li>
               ))}
             </ul>
-          </section>
+          </motion.section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-            <p className="text-sm font-semibold text-slate-900">Quick actions</p>
-            <p className="mt-1 text-xs text-slate-600">Jump into high-frequency workflows</p>
-            <div className="mt-4 grid grid-cols-1 gap-2">
+          <motion.section variants={itemVariants} className="rounded-xl border border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 shadow-sm transition-all hover:shadow-md">
+            <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
+            <p className="mt-0.5 text-xs text-slate-500">Jump into high-frequency workflows</p>
+            <div className="mt-5 grid grid-cols-1 gap-2.5">
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full justify-start"
+                className="w-full justify-start py-2.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
                 onClick={() => setQuickOpen("student")}
               >
-                Add Student
+                <div className="flex items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded bg-brand-50 text-brand-600 mr-2">
+                    <IconUsers className="w-3.5 h-3.5" />
+                  </span>
+                  Add Student
+                </div>
               </Button>
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full justify-start"
+                className="w-full justify-start py-2.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
                 onClick={() => setQuickOpen("warden")}
               >
-                Add Warden
+                <div className="flex items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded bg-purple-50 text-purple-600 mr-2">
+                    <IconShield className="w-3.5 h-3.5" />
+                  </span>
+                  Add Warden
+                </div>
               </Button>
               <Button
                 type="button"
                 variant="secondary"
-                className="w-full justify-start"
+                className="w-full justify-start py-2.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
                 onClick={() => setQuickOpen("hostel")}
               >
-                Create Hostel
+                <div className="flex items-center">
+                  <span className="flex items-center justify-center w-6 h-6 rounded bg-amber-50 text-amber-600 mr-2">
+                    <IconChart className="w-3.5 h-3.5" />
+                  </span>
+                  Create Hostel
+                </div>
               </Button>
             </div>
-          </section>
+          </motion.section>
+          </motion.div>
         </div>
       </AsyncState>
 
@@ -380,7 +444,7 @@ export function AdminDashboardHomePage() {
         footer={
           <>
             <Button type="button" variant="secondary" onClick={() => setQuickOpen(null)}>
-              Close
+              Cancel
             </Button>
             <Button
               type="button"
@@ -395,16 +459,16 @@ export function AdminDashboardHomePage() {
                 navigate(target);
               }}
             >
-              Continue
+              Continue to Module
             </Button>
           </>
         }
       >
-        <p className="text-sm text-slate-700">
-          This action opens the dedicated module where validations, RBAC checks, and audit trails are
+        <p className="text-sm text-slate-600">
+          This action opens the dedicated module where validations, role-based access control, and audit trails are
           enforced end-to-end.
         </p>
       </AppModal>
-    </div>
+    </motion.div>
   );
 }

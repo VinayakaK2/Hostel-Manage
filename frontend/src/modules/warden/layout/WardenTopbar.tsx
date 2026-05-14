@@ -60,7 +60,7 @@ export function WardenTopbar() {
         </button>
 
         <div className="min-w-0 flex-1 basis-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">{hostelLine}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{hostelLine}</p>
           <h1 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
             {title}
           </h1>
@@ -102,7 +102,7 @@ export function WardenTopbar() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-xs font-bold text-white">
               {(user?.name ?? "W").slice(0, 1).toUpperCase()}
             </span>
             <span className="hidden min-w-0 sm:block">

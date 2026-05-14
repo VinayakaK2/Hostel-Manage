@@ -194,7 +194,7 @@ export function WardenStudentsPage() {
   });
 
   return (
-    <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <div className="erp-page-tight flex min-h-0 flex-1 flex-col gap-4">
       {selectedClass == null ? (
         <div className="shrink-0">
           <h2 className="text-lg font-semibold text-slate-900">Student roster</h2>

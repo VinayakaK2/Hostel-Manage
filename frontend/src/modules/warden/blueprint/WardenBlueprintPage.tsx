@@ -31,11 +31,11 @@ const MAP_MARGIN = 36;
 /** Extra zoom-out so the whole floor reads like an overview (not “max fill”). */
 const DEFAULT_VIEW_SLACK = 1.1;
 /** Reserve space for floating legend + floor controls so fit targets visible canvas. */
-const FIT_RESERVE_TOP = 56;
+const FIT_RESERVE_TOP = 45;
 const FIT_RESERVE_BOTTOM = 96;
 const FIT_RESERVE_X = 16;
 /** Y translate after scale: anchor map below top chrome (not vertically centred). */
-const VIEW_TOP_ANCHOR = 56;
+const VIEW_TOP_ANCHOR = 45;
 
 /**
  * Fit the transform **content** (slab) into the viewport: scale from slack, **horizontally centred**,

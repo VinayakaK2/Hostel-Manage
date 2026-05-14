@@ -74,7 +74,7 @@ export function WardenLeaveRecordsPage() {
       : (students.find((s) => s.id === selectedStudentId)?.name ?? "Student");
 
   return (
-    <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <div className="erp-page-tight flex min-h-0 flex-1 flex-col gap-4">
       <div className="shrink-0">
         <h2 className="text-lg font-semibold text-slate-900">Leave records</h2>
         <p className="text-sm text-slate-600">Attendance-linked leave marks for your hostel.</p>
@@ -143,7 +143,7 @@ export function WardenLeaveRecordsPage() {
         </label>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         <AsyncState
           loading={loading}
           error={error}

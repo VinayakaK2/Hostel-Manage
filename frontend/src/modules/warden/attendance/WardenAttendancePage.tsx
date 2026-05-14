@@ -156,7 +156,7 @@ export function WardenAttendancePage() {
   };
 
   return (
-    <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <div className="erp-page-tight flex min-h-0 flex-1 flex-col gap-4">
       <div className="shrink-0 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Attendance management</h2>
@@ -186,7 +186,7 @@ export function WardenAttendancePage() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col">
       <AsyncState
         loading={loading}
         error={error}
