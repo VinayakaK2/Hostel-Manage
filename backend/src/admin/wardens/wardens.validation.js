@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { prismaStringId, queryPrismaIdOptional } from "../../lib/prismaIdSchema.js";
 
 export const listWardensQuerySchema = z
   .object({
@@ -6,7 +7,7 @@ export const listWardensQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(20),
     search: z.string().trim().max(120).optional(),
     status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
-    hostelId: z.string().cuid().optional(),
+    hostelId: queryPrismaIdOptional,
     sort: z.enum(["name_asc", "name_desc", "created_desc"]).default("name_asc"),
   })
   .strict();
@@ -17,7 +18,7 @@ export const createWardenSchema = z
     email: z.string().trim().email().transform((v) => v.toLowerCase()),
     phone: z.string().trim().min(8).max(20),
     password: z.string().min(8).max(100),
-    assigned_hostel_id: z.string().cuid().optional().nullable(),
+    assigned_hostel_id: prismaStringId.optional().nullable(),
   })
   .strict();
 
@@ -31,7 +32,7 @@ export const updateWardenSchema = z
 
 export const assignHostelSchema = z
   .object({
-    hostel_id: z.string().cuid().nullable(),
+    hostel_id: prismaStringId.nullable(),
   })
   .strict();
 

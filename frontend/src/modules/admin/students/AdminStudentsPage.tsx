@@ -26,9 +26,9 @@ const studentFormSchema = z.object({
     (v) => (v === "" || v === undefined ? undefined : Number(v)),
     z.union([z.literal(11), z.literal(12)]),
   ),
-  course: z.string().trim().min(2).max(120),
+  course: z.enum(["PCM", "PCMB"]),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
-  parent_contact: z.string().trim().min(6).max(32),
+  parent_contact: z.string().trim().min(6).max(64),
   hostel_id: z.string().min(1),
   room_id: z.string().optional().or(z.literal("")),
   status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]),
@@ -59,7 +59,7 @@ function AdminGlobalAddStudentModal({
       name: "",
       gender: "MALE",
       class_year: 11,
-      course: "",
+      course: "PCM",
       phone: "",
       parent_contact: "",
       hostel_id: "",
@@ -78,7 +78,7 @@ function AdminGlobalAddStudentModal({
       name: "",
       gender: cohort ?? "MALE",
       class_year: classYear ?? 11,
-      course: "",
+      course: "PCM",
       phone: "",
       parent_contact: "",
       hostel_id: "",
@@ -137,14 +137,18 @@ function AdminGlobalAddStudentModal({
           </Button>
           <Button
             onClick={form.handleSubmit(async (values) => {
-              const body = {
-                ...values,
-                phone: values.phone || undefined,
-                room_id: values.room_id || undefined,
-              };
-              await createStudent(body);
-              onCreated();
-              onClose();
+              try {
+                const body = {
+                  ...values,
+                  phone: values.phone || undefined,
+                  room_id: values.room_id || undefined,
+                };
+                await createStudent(body);
+                onCreated();
+                onClose();
+              } catch (e) {
+                alert(e instanceof AdminClientError ? e.message : "Could not create student.");
+              }
             })}
           >
             Save
@@ -190,7 +194,16 @@ function AdminGlobalAddStudentModal({
         )}
         <TextField label="Student ID" {...form.register("student_id")} error={form.formState.errors.student_id?.message} />
         <TextField label="Full name" {...form.register("name")} error={form.formState.errors.name?.message} />
-        <TextField label="Course" {...form.register("course")} error={form.formState.errors.course?.message} />
+        <label className="text-sm font-medium text-slate-700">
+          Course (PU stream)
+          <select className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...form.register("course")}>
+            <option value="PCM">PCM</option>
+            <option value="PCMB">PCMB</option>
+          </select>
+        </label>
+        {form.formState.errors.course?.message ? (
+          <p className="text-sm text-rose-600">{form.formState.errors.course.message}</p>
+        ) : null}
         <TextField label="Phone (optional)" {...form.register("phone")} error={form.formState.errors.phone?.message} />
         <TextField
           label="Parent contact"
@@ -424,7 +437,7 @@ function StudentSection({
               name: s.name,
               gender: s.gender,
               class_year: s.class_year === 12 ? 12 : 11,
-              course: s.course,
+              course: s.course === "PCM" || s.course === "PCMB" ? s.course : s.class_year === 12 ? "PCMB" : "PCM",
               phone: s.phone ?? "",
               parent_contact: s.parent_contact,
               hostel_id: s.hostel.id,
@@ -520,18 +533,22 @@ function StudentSection({
             <Button
               onClick={editForm.handleSubmit(async (values) => {
                 if (!edit) return;
-                await updateStudent(edit.id, {
-                  student_id: values.student_id,
-                  name: values.name,
-                  class_year: values.class_year,
-                  course: values.course,
-                  phone: values.phone || undefined,
-                  parent_contact: values.parent_contact,
-                  hostel_id: values.hostel_id,
-                  status: values.status,
-                });
-                setEdit(null);
-                bump();
+                try {
+                  await updateStudent(edit.id, {
+                    student_id: values.student_id,
+                    name: values.name,
+                    class_year: values.class_year,
+                    course: values.course,
+                    phone: values.phone || undefined,
+                    parent_contact: values.parent_contact,
+                    hostel_id: values.hostel_id,
+                    status: values.status,
+                  });
+                  setEdit(null);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not update student.");
+                }
               })}
             >
               Save changes
@@ -553,7 +570,16 @@ function StudentSection({
                 <option value={12}>Class 12</option>
               </select>
             </div>
-            <TextField label="Course" {...editForm.register("course")} error={editForm.formState.errors.course?.message} />
+            <label className="text-sm font-medium text-slate-700">
+              Course (PU stream)
+              <select className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" {...editForm.register("course")}>
+                <option value="PCM">PCM</option>
+                <option value="PCMB">PCMB</option>
+              </select>
+            </label>
+            {editForm.formState.errors.course?.message ? (
+              <p className="text-sm text-rose-600">{editForm.formState.errors.course.message}</p>
+            ) : null}
             <TextField label="Phone" {...editForm.register("phone")} error={editForm.formState.errors.phone?.message} />
             <TextField
               label="Parent contact"

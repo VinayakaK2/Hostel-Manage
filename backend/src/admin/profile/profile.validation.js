@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { prismaStringId } from "../../lib/prismaIdSchema.js";
 
 export const updateProfileSchema = z
   .object({
@@ -19,6 +20,9 @@ export const updatePreferencesSchema = z
     theme: z.string().max(32).optional(),
     emailDigest: z.boolean().optional(),
     pushAlerts: z.boolean().optional(),
-    defaultHostelFilter: z.string().cuid().optional().nullable(),
+    defaultHostelFilter: z.preprocess(
+      (v) => (v === "" ? null : v),
+      prismaStringId.nullable().optional(),
+    ),
   })
   .strict();

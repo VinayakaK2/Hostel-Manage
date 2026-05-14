@@ -21,7 +21,7 @@ import { PasswordField } from "@/components/ui/PasswordField";
 const createSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  phone: z.string().min(8),
+  phone: z.string().min(8).max(20),
   password: z.string().min(8).max(100),
   assigned_hostel_id: z.string().optional().or(z.literal("")),
 });
@@ -45,6 +45,17 @@ export function AdminWardensPage() {
 
   const createForm = useForm<z.infer<typeof createSchema>>({ resolver: zodResolver(createSchema) });
   const resetForm = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema) });
+
+  useEffect(() => {
+    if (!createOpen) return;
+    createForm.reset({
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      assigned_hostel_id: "",
+    });
+  }, [createOpen, createForm]);
 
   useEffect(() => {
     if (!assign) {
@@ -161,12 +172,16 @@ export function AdminWardensPage() {
             </Button>
             <Button
               onClick={createForm.handleSubmit(async (v) => {
-                await createWarden({
-                  ...v,
-                  assigned_hostel_id: v.assigned_hostel_id || null,
-                });
-                setCreateOpen(false);
-                bump();
+                try {
+                  await createWarden({
+                    ...v,
+                    assigned_hostel_id: v.assigned_hostel_id || null,
+                  });
+                  setCreateOpen(false);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not create warden.");
+                }
               })}
             >
               Create

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { prismaStringId, queryPrismaIdOptional } from "../../lib/prismaIdSchema.js";
 
 export const listStudentsQuerySchema = z
   .object({
@@ -9,7 +10,7 @@ export const listStudentsQuerySchema = z
     /** Class 11 or 12 (query: ?class=11) */
     class: z.coerce.number().int().refine((n) => n === 11 || n === 12).optional(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).optional(),
-    hostelId: z.string().cuid().optional(),
+    hostelId: queryPrismaIdOptional,
     sort: z.enum(["name_asc", "name_desc", "created_desc", "created_asc"]).default("name_asc"),
   })
   .strict();
@@ -20,11 +21,11 @@ export const createStudentSchema = z
     name: z.string().trim().min(2).max(120),
     gender: z.enum(["MALE", "FEMALE"]),
     class_year: z.coerce.number().int().refine((n) => n === 11 || n === 12).optional(),
-    course: z.string().trim().min(2).max(120),
+    course: z.enum(["PCM", "PCMB"]),
     phone: z.string().trim().max(20).optional().nullable(),
-    parent_contact: z.string().trim().min(6).max(32),
-    hostel_id: z.string().cuid(),
-    room_id: z.string().cuid().optional().nullable(),
+    parent_contact: z.string().trim().min(6).max(64),
+    hostel_id: prismaStringId,
+    room_id: prismaStringId.optional().nullable(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).default("ACTIVE"),
   })
   .strict();
@@ -35,17 +36,17 @@ export const updateStudentSchema = z
     name: z.string().trim().min(2).max(120).optional(),
     gender: z.enum(["MALE", "FEMALE"]).optional(),
     class_year: z.coerce.number().int().refine((n) => n === 11 || n === 12).optional(),
-    course: z.string().trim().min(2).max(120).optional(),
+    course: z.enum(["PCM", "PCMB"]).optional(),
     phone: z.string().trim().max(20).optional().nullable(),
-    parent_contact: z.string().trim().min(6).max(32).optional(),
-    hostel_id: z.string().cuid().optional(),
+    parent_contact: z.string().trim().min(6).max(64).optional(),
+    hostel_id: prismaStringId.optional(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).optional(),
   })
   .strict();
 
 export const transferRoomSchema = z
   .object({
-    room_id: z.string().cuid(),
+    room_id: prismaStringId,
   })
   .strict();
 
