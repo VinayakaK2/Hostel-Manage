@@ -46,7 +46,11 @@ export function AdminSettingsPage() {
           className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
           onSubmit={async (e) => {
             e.preventDefault();
-            await patchAdminSettings(prefs);
+            try {
+              await patchAdminSettings(prefs);
+            } catch (err) {
+              alert(err instanceof AdminClientError ? err.message : "Could not save preferences.");
+            }
           }}
         >
           <div className="flex flex-col gap-1.5">

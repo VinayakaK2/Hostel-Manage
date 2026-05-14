@@ -89,6 +89,11 @@ export function AdminWardensPage() {
 
   const bump = () => setReload((x) => x + 1);
 
+  useEffect(() => {
+    if (!resetW) return;
+    resetForm.reset({ new_password: "" });
+  }, [resetW, resetForm]);
+
   return (
     <div className="erp-page">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -224,9 +229,13 @@ export function AdminWardensPage() {
             <Button
               onClick={async () => {
                 if (!assign) return;
-                await assignWardenHostel(assign.id, assignPick || null);
-                setAssign(null);
-                bump();
+                try {
+                  await assignWardenHostel(assign.id, assignPick || null);
+                  setAssign(null);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not assign hostel.");
+                }
               }}
             >
               Save
@@ -271,9 +280,13 @@ export function AdminWardensPage() {
             <Button
               onClick={resetForm.handleSubmit(async (v) => {
                 if (!resetW) return;
-                await resetWardenPassword(resetW.id, v.new_password);
-                setResetW(null);
-                bump();
+                try {
+                  await resetWardenPassword(resetW.id, v.new_password);
+                  setResetW(null);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not reset password.");
+                }
               })}
             >
               Reset

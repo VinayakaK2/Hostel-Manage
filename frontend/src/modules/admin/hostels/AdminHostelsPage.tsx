@@ -74,6 +74,11 @@ export function AdminHostelsPage() {
   const bump = () => setReload((x) => x + 1);
 
   useEffect(() => {
+    if (!createOpen) return;
+    createForm.reset({ name: "", type: "BOYS", capacity: 100, floor_count: 1 });
+  }, [createOpen, createForm]);
+
+  useEffect(() => {
     if (!edit) return;
     editForm.reset({
       name: edit.name,
@@ -163,9 +168,13 @@ export function AdminHostelsPage() {
             </Button>
             <Button
               onClick={createForm.handleSubmit(async (v) => {
-                await createHostel(v);
-                setCreateOpen(false);
-                bump();
+                try {
+                  await createHostel(v);
+                  setCreateOpen(false);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not create hostel.");
+                }
               })}
             >
               Create
@@ -209,9 +218,13 @@ export function AdminHostelsPage() {
             <Button
               onClick={editForm.handleSubmit(async (v) => {
                 if (!edit) return;
-                await updateHostel(edit.id, v);
-                setEdit(null);
-                bump();
+                try {
+                  await updateHostel(edit.id, v);
+                  setEdit(null);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not update hostel.");
+                }
               })}
             >
               Save
@@ -224,13 +237,13 @@ export function AdminHostelsPage() {
             <TextField
               label="Capacity"
               type="number"
-              {...editForm.register("capacity")}
+              {...editForm.register("capacity", { valueAsNumber: true })}
               error={editForm.formState.errors.capacity?.message}
             />
             <TextField
               label="Floors"
               type="number"
-              {...editForm.register("floor_count")}
+              {...editForm.register("floor_count", { valueAsNumber: true })}
               error={editForm.formState.errors.floor_count?.message}
             />
         </div>
@@ -248,9 +261,13 @@ export function AdminHostelsPage() {
             <Button
               onClick={roomForm.handleSubmit(async (v) => {
                 if (!roomHostel) return;
-                await createHostelRoom(roomHostel.id, v);
-                roomForm.reset({ room_number: "", capacity: 4, floor: 1 });
-                bump();
+                try {
+                  await createHostelRoom(roomHostel.id, v);
+                  roomForm.reset({ room_number: "", capacity: 4, floor: 1 });
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not add room.");
+                }
               })}
             >
               Add room

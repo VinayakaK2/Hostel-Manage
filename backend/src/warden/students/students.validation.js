@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { prismaStringId } from "../../lib/prismaIdSchema.js";
 
 export const listWardenStudentsQuerySchema = z
   .object({
@@ -23,7 +24,7 @@ export const createWardenStudentSchema = z
     course: z.enum(["PCM", "PCMB"]),
     phone: z.string().trim().max(20).optional().nullable(),
     parent_contact: z.string().trim().min(6).max(64),
-    room_id: z.string().cuid().optional().nullable(),
+    room_id: prismaStringId.optional().nullable(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).default("ACTIVE"),
   })
   .strict();
@@ -37,13 +38,13 @@ export const updateWardenStudentSchema = z
     course: z.enum(["PCM", "PCMB"]).optional(),
     phone: z.string().trim().max(20).optional().nullable(),
     parent_contact: z.string().trim().min(6).max(64).optional(),
-    room_id: z.string().cuid().optional().nullable(),
+    room_id: prismaStringId.optional().nullable(),
     status: z.enum(["ACTIVE", "INACTIVE", "ON_LEAVE"]).optional(),
   })
   .strict();
 
 export const transferWardenRoomSchema = z
   .object({
-    room_id: z.string().cuid(),
+    room_id: prismaStringId,
   })
   .strict();

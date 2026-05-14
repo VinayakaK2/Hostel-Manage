@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface AppModalProps {
   open: boolean;
@@ -28,20 +29,20 @@ export function AppModal({
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="absolute inset-0 z-0 bg-slate-900/40 backdrop-blur-sm"
         aria-label="Close dialog"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
+      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
         <div className="border-b border-slate-100 px-6 py-4">
           <h2 id="modal-title" className="text-lg font-semibold text-slate-900">
             {title}
@@ -59,4 +60,6 @@ export function AppModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

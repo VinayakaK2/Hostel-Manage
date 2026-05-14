@@ -613,9 +613,13 @@ function StudentSection({
               disabled={!transferRoom}
               onClick={async () => {
                 if (!transfer || !transferRoom) return;
-                await transferStudentRoom(transfer.id, transferRoom);
-                setTransfer(null);
-                bump();
+                try {
+                  await transferStudentRoom(transfer.id, transferRoom);
+                  setTransfer(null);
+                  bump();
+                } catch (e) {
+                  alert(e instanceof AdminClientError ? e.message : "Could not transfer student.");
+                }
               }}
             >
               Transfer

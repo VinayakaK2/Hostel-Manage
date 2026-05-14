@@ -106,8 +106,12 @@ export function AdminProfilePage() {
           <form
             className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
             onSubmit={pf.handleSubmit(async (v) => {
-              const updated = (await patchAdminProfile(v)) as ProfileDto;
-              setProfile(updated);
+              try {
+                const updated = (await patchAdminProfile(v)) as ProfileDto;
+                setProfile(updated);
+              } catch (e) {
+                alert(e instanceof AdminClientError ? e.message : "Could not update profile.");
+              }
             })}
           >
             <TextField label="Name" {...pf.register("name")} error={pf.formState.errors.name?.message} />
@@ -120,8 +124,12 @@ export function AdminProfilePage() {
           <form
             className="w-full min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
             onSubmit={pw.handleSubmit(async (v) => {
-              await patchAdminPassword(v);
-              pw.reset();
+              try {
+                await patchAdminPassword(v);
+                pw.reset();
+              } catch (e) {
+                alert(e instanceof AdminClientError ? e.message : "Could not change password.");
+              }
             })}
           >
             <PasswordField

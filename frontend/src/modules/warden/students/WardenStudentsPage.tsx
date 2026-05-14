@@ -30,7 +30,7 @@ const studentFormSchema = z.object({
     (v) => (v === "" || v === undefined ? undefined : Number(v)),
     z.union([z.literal(11), z.literal(12)]),
   ),
-  course: z.string().trim().min(2).max(120),
+  course: z.enum(["PCM", "PCMB"]),
   phone: z.string().trim().max(20).optional().nullable(),
   parent_contact: z.string().trim().min(6).max(64),
   room_id: z.string().optional().nullable(),
@@ -128,13 +128,28 @@ export function WardenStudentsPage() {
       name: "",
       gender: "MALE",
       class_year: 11,
-      course: "",
+      course: "PCM",
       phone: "",
       parent_contact: "",
       room_id: "",
       status: "ACTIVE",
     },
   });
+
+  useEffect(() => {
+    if (!addOpen) return;
+    addForm.reset({
+      student_id: "",
+      name: "",
+      gender: "MALE",
+      class_year: selectedClass ?? 11,
+      course: "PCM",
+      phone: "",
+      parent_contact: "",
+      room_id: "",
+      status: "ACTIVE",
+    });
+  }, [addOpen, selectedClass, addForm]);
 
   useEffect(() => {
     if (selectedClass != null) {
@@ -162,7 +177,7 @@ export function WardenStudentsPage() {
             name: d.name,
             gender: d.gender,
             class_year: d.class_year === 12 ? 12 : 11,
-            course: d.course,
+            course: d.course === "PCM" || d.course === "PCMB" ? d.course : d.class_year === 12 ? "PCMB" : "PCM",
             phone: d.phone ?? "",
             parent_contact: d.parent_contact,
             room_id: d.room?.id ?? "",
@@ -177,8 +192,6 @@ export function WardenStudentsPage() {
   const transferForm = useForm<{ room_id: string }>({
     defaultValues: { room_id: "" },
   });
-
-  const editCourseWatch = editForm.watch("course");
 
   return (
     <div className="erp-page-tight flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -463,7 +476,6 @@ export function WardenStudentsPage() {
           <label className="text-sm font-medium text-slate-700">
             Course (PU stream)
             <select className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" {...addForm.register("course")}>
-              <option value="">Select stream</option>
               <option value="PCM">PCM</option>
               <option value="PCMB">PCMB</option>
             </select>
@@ -573,12 +585,6 @@ export function WardenStudentsPage() {
           <label className="text-sm font-medium text-slate-700">
             Course (PU stream)
             <select className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" {...editForm.register("course")}>
-              <option value="">Select stream</option>
-              {editCourseWatch && editCourseWatch !== "PCM" && editCourseWatch !== "PCMB" ? (
-                <option value={editCourseWatch}>
-                  {editCourseWatch} (current)
-                </option>
-              ) : null}
               <option value="PCM">PCM</option>
               <option value="PCMB">PCMB</option>
             </select>
